@@ -11,8 +11,10 @@ readme = "README.md"
 requires-python = ">=3.11,<3.14"
 packages = [
   { include = "parallax", from = "src" },
-  { include = "scheduling", from = "src" },
   { include = "parallax_utils", from = "src" },
+  { include = "scheduling", from = "src" },
+  { include = "backend", from = "src" },
+  { include = "frontend", from = "src" },
 ]
 
 dependencies = [
@@ -84,7 +86,7 @@ dev = [
 ]
 
 [tool.setuptools.packages.find]
-where = ["src"]                # put your code under ./src/…
+where = ["src"]
 
 [tool.black]
 line-length = 100
@@ -93,5 +95,5 @@ line-length = 100
 profile = "black"
 
 [tool.ruff]
-ignore = ["E501"]              # line length handled by Black
+ignore = ["E501"]
 line-length = 100
