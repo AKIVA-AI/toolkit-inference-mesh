@@ -1,0 +1,7 @@
+Toolkit Inference Mesh (this repository) includes code derived from:
+  Parallax (https://github.com/GradientHQ/parallax)
+  Copyright (c) Gradient Network
+  Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+This is a Toolkit-branded fork used for evaluation and future enhancements. Any Toolkit-specific modifications should be
+tracked in UPSTREAM.md with a clear description of changes relative to the upstream commit.
