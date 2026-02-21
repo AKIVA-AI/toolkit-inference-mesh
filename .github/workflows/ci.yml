@@ -92,7 +92,7 @@ jobs:
     
     - name: Build Docker image
       run: |
-        docker build -t toolkit-inference-mesh:test .
+        docker build -t toolkit-inference-mesh:test -f docker/Dockerfile .
     
     - name: Test Docker image
       run: |
