@@ -8,4 +8,4 @@ COPY README.md ./README.md
 COPY src ./src
 COPY pyproject.toml ./pyproject.toml
 
-RUN pip install -e '.[gpu]'
+RUN pip install -e '.[gpu]' || pip install '.[gpu]'
