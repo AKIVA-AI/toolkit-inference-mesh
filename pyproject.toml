@@ -9,13 +9,6 @@ version = "0.1.2"
 description = "Inference Mesh (fork of Parallax): decentralised pipeline-parallel LLM serving with SGLang + MLX-LM + Lattica"
 readme = "README.md"
 requires-python = ">=3.11,<3.14"
-packages = [
-  { include = "parallax", from = "src" },
-  { include = "parallax_utils", from = "src" },
-  { include = "scheduling", from = "src" },
-  { include = "backend", from = "src" },
-  { include = "frontend", from = "src" },
-]
 
 dependencies = [
   "msgpack>=1.0.7",
@@ -87,6 +80,7 @@ dev = [
 
 [tool.setuptools.packages.find]
 where = ["src"]
+include = ["parallax*", "parallax_utils*", "scheduling*", "backend*", "frontend*"]
 
 [tool.black]
 line-length = 100
