@@ -40,6 +40,12 @@ dependencies = [
 toolkit-mesh = "parallax.cli:main"
 parallax = "parallax.cli:main"
 
+[project.urls]
+Homepage = "https://github.com/AKIVA-AI/toolkit-inference-mesh"
+Repository = "https://github.com/AKIVA-AI/toolkit-inference-mesh"
+Documentation = "https://github.com/AKIVA-AI/toolkit-inference-mesh#readme"
+"Bug Tracker" = "https://github.com/AKIVA-AI/toolkit-inference-mesh/issues"
+
 [project.optional-dependencies]
 
 mac = [
@@ -78,7 +84,7 @@ dev = [
 ]
 
 [tool.setuptools.packages.find]
-where = ["src"]                # put your code under ./src/â€¦
+where = ["src"]                # put your code under ./src/…
 
 [tool.black]
 line-length = 100
@@ -89,4 +95,3 @@ profile = "black"
 [tool.ruff]
 ignore = ["E501"]              # line length handled by Black
 line-length = 100
-
