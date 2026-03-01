@@ -64,5 +64,3 @@ def parse_args() -> argparse.Namespace:
         args.toolkit_event_log = str(Path(str(args.toolkit_event_log)).expanduser())
 
     return args
-
-

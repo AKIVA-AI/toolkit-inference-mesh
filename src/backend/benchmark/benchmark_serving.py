@@ -191,6 +191,7 @@ def sample_wildchat_requests(
     fixed_output_len: Optional[int] = None,
 ) -> List[Tuple[str, int, int, None]]:
     dataset = load_dataset(dataset_path, split="train")
+
     def filter_func(x):
         return len(x["conversation"]) >= 2
 
@@ -233,6 +234,7 @@ def sample_hf_requests(
 
     dataset = load_dataset(dataset_path, name=dataset_subset, split=dataset_split, streaming=True)
     assert "conversations" in dataset.features, "HF Dataset must have 'conversations' column."
+
     def filter_func(x):
         return len(x["conversations"]) >= 2
 
@@ -339,9 +341,7 @@ def sample_sonnet_requests(
         poem_lines = f.readlines()
 
     # Prefix shared across prompts
-    prefix_token_ids = tokenizer(
-        "".join(poem_lines[:prefix_len])
-    ).input_ids
+    prefix_token_ids = tokenizer("".join(poem_lines[:prefix_len])).input_ids
     prefix_text = tokenizer.decode(prefix_token_ids)
 
     input_requests: List[Tuple[str, str, int, int, None]] = []
@@ -370,9 +370,7 @@ def sample_sonnet_requests(
             except Exception:
                 pass
 
-        input_requests.append(
-            (prompt, prompt_formatted, prompt_len, output_len, None)
-        )
+        input_requests.append((prompt, prompt_formatted, prompt_len, output_len, None))
 
     return input_requests
 

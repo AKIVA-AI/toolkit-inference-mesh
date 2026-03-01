@@ -299,4 +299,3 @@ class RequestHandler:
         self, request_data: Dict, request_id: str, received_ts: int, request: Request | None = None
     ):
         return await self._forward_request(request_data, request_id, received_ts, request)
-

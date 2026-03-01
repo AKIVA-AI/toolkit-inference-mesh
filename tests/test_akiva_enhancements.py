@@ -30,9 +30,10 @@ from backend.server.toolkit_event_log import (
 def test_validate_event_log_path_success(tmp_path: Path) -> None:
     """Test path validation succeeds within allowed directory."""
     log_path = tmp_path / "logs" / "events.jsonl"
-    
+
     # Change cwd to tmp_path so logs/ is within cwd
     import os
+
     old_cwd = os.getcwd()
     try:
         os.chdir(tmp_path)
@@ -255,6 +256,7 @@ def test_inference_event_with_optional_fields() -> None:
 def test_append_inference_event_success(tmp_path: Path) -> None:
     """Test appending valid inference event."""
     import os
+
     old_cwd = os.getcwd()
     try:
         os.chdir(tmp_path)
@@ -286,6 +288,7 @@ def test_append_inference_event_success(tmp_path: Path) -> None:
 def test_append_inference_event_invalid_data(tmp_path: Path, caplog) -> None:
     """Test appending invalid event logs error but doesn't crash."""
     import os
+
     old_cwd = os.getcwd()
     try:
         os.chdir(tmp_path)
@@ -330,6 +333,7 @@ def test_append_inference_event_no_path() -> None:
 def test_append_inference_event_creates_parent_dir(tmp_path: Path) -> None:
     """Test appending event creates parent directories."""
     import os
+
     old_cwd = os.getcwd()
     try:
         os.chdir(tmp_path)
@@ -379,6 +383,7 @@ def test_set_event_log_path_invalid() -> None:
 def test_full_workflow(tmp_path: Path) -> None:
     """Test full workflow: set path, set cost, append events."""
     import os
+
     old_cwd = os.getcwd()
     try:
         os.chdir(tmp_path)
@@ -415,5 +420,3 @@ def test_full_workflow(tmp_path: Path) -> None:
     finally:
         os.chdir(old_cwd)
         set_event_log_path(None)
-
-

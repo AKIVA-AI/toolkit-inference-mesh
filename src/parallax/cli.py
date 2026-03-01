@@ -355,7 +355,7 @@ def main():
     """Main CLI entry point."""
     # Detect which CLI command was used
     cli_name = os.path.basename(sys.argv[0]) if sys.argv else "toolkit-mesh"
-    
+
     parser = argparse.ArgumentParser(
         prog=cli_name,
         description="Toolkit Inference Mesh - Distributed LLM inference (Toolkit fork of Parallax by Gradient Network)",
@@ -372,7 +372,7 @@ Examples:
 Note: Both 'toolkit-mesh' and 'parallax' commands are available (toolkit-mesh is the primary Toolkit-branded CLI)
         """,
     )
-    
+
     parser.add_argument(
         "--version",
         action="version",
@@ -382,9 +382,7 @@ Note: Both 'toolkit-mesh' and 'parallax' commands are available (toolkit-mesh is
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
     # Add 'run' command parser
-    run_parser = subparsers.add_parser(
-        "run", help="Start the Toolkit Inference Mesh scheduler"
-    )
+    run_parser = subparsers.add_parser("run", help="Start the Toolkit Inference Mesh scheduler")
     run_parser.add_argument("-n", "--init-nodes-num", type=int, help="Number of initial nodes")
     run_parser.add_argument("-m", "--model-name", type=str, help="Model name")
     run_parser.add_argument(
@@ -413,9 +411,7 @@ Note: Both 'toolkit-mesh' and 'parallax' commands are available (toolkit-mesh is
     )
 
     # Add 'chat' command parser
-    chat_parser = subparsers.add_parser(
-        "chat", help="Start the Toolkit Inference Mesh chat server"
-    )
+    chat_parser = subparsers.add_parser("chat", help="Start the Toolkit Inference Mesh chat server")
     chat_parser.add_argument(
         "-s",
         "--scheduler-addr",
@@ -447,5 +443,3 @@ Note: Both 'toolkit-mesh' and 'parallax' commands are available (toolkit-mesh is
 
 if __name__ == "__main__":
     main()
-
-

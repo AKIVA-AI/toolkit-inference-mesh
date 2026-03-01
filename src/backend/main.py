@@ -64,8 +64,12 @@ async def toolkit_inference_event_middleware(request: Request, call_next):  # ty
             model = str(getattr(request.state, "model", "") or "")
             req_id = str(getattr(request.state, "request_id", "") or "")
             tier = str(getattr(request.state, "tier", "") or "")
-            tenant = str(getattr(request.state, "tenant", "") or "") or request.headers.get("x-tenant", "")
-            project = str(getattr(request.state, "project", "") or "") or request.headers.get("x-project", "")
+            tenant = str(getattr(request.state, "tenant", "") or "") or request.headers.get(
+                "x-tenant", ""
+            )
+            project = str(getattr(request.state, "project", "") or "") or request.headers.get(
+                "x-project", ""
+            )
 
             # Cost is unknown at this layer; set to 0.0 until a pricing model is introduced.
             event = {
@@ -207,7 +211,9 @@ async def openai_v1_chat_completions(raw_request: Request):
         raw_request.state.project = str(raw_request.headers.get("x-project", "") or "")
     except Exception:
         pass
-    return await request_handler.v1_chat_completions(request_data, request_id, received_ts, raw_request)
+    return await request_handler.v1_chat_completions(
+        request_data, request_id, received_ts, raw_request
+    )
 
 
 # Disable caching for index.html
@@ -287,5 +293,3 @@ if __name__ == "__main__":
     port = args.port
 
     uvicorn.run(app, host=host, port=port, log_level="info", loop="uvloop")
-
-
