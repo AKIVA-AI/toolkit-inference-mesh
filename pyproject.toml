@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 
@@ -80,7 +80,7 @@ dev = [
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["parallax*", "parallax_utils*", "scheduling*", "backend*", "frontend*"]
+include = ["parallax*", "parallax_utils*", "scheduling*", "backend*"]
 
 [tool.black]
 line-length = 100
@@ -89,5 +89,6 @@ line-length = 100
 profile = "black"
 
 [tool.ruff]
-ignore = ["E501"]
+ignore = ["E501"]              # line length handled by Black
 line-length = 100
+

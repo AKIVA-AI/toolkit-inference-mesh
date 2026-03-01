@@ -37,28 +37,17 @@ The backend architecture:
 - [Installation](./docs/user_guide/install.md)
 - [Getting Started](./docs/user_guide/quick_start.md)
 
-## Commercialization
-
-See `COMMERCIALIZATION.md` for OSS vs Pro strategy, pricing anchors, and competitive positioning.
-
 ## Toolkit extensions
 
-See `Toolkit_EXTENSIONS_ROADMAP.md` for how Toolkit adds governance and integrations around the OSS engine.
+See `TOOLKIT_EXTENSIONS_ROADMAP.md` for how Toolkit adds governance and integrations around the OSS engine.
 
 ## Toolkit inference event logging (for cost/latency analysis)
 
 When launching the scheduler (`toolkit-mesh run`), you can enable JSONL event logging for requests to
 `/v1/chat/completions`:
 
-- `--toolkit-event-log <path>` writes events in schema v1 (see `docs/enterprise-tools/schemas/toolkit_inference_event.schema.json`)
+- `--toolkit-event-log <path>` writes events in JSONL format (schema defined in `src/backend/server/toolkit_event_log.py`)
 - `--toolkit-cost-per-1k-tokens-usd <float>` optionally populates `cost_usd` from token counts
-
-Validate and analyze the resulting log with `enterprise-tools/cost-latency-optimizer/`:
-
-```bash
-toolkit-opt validate --input events.jsonl
-toolkit-opt summarize --input events.jsonl
-```
 
 ## Toolkit CLI naming
 

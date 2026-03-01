@@ -20,6 +20,6 @@ Release notes should always include:
 
 ## Deprecations
 
-Follow suite policy: `docs/enterprise-tools/VERSIONING.md`.
+Deprecated features are announced one minor version in advance and removed in the next major version.
 
 

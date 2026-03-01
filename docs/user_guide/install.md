@@ -25,8 +25,8 @@ Below are installation methods for different operating systems.
 #### For Linux/WSL (GPU):
 Note: If you are using DGX Spark, please refer to the Docker installation section
 ```sh
-git clone https://github.com/GradientHQ/parallax.git
-cd parallax
+git clone https://github.com/AKIVA-AI/toolkit-inference-mesh.git
+cd toolkit-inference-mesh
 pip install -e '.[gpu]'
 ```
 
@@ -35,8 +35,8 @@ pip install -e '.[gpu]'
 We recommend macOS users to create an isolated Python virtual environment before installation.
 
 ```sh
-git clone https://github.com/GradientHQ/parallax.git
-cd parallax
+git clone https://github.com/AKIVA-AI/toolkit-inference-mesh.git
+cd toolkit-inference-mesh
 
 # Enter Python virtual environment
 python3 -m venv ./venv
@@ -53,7 +53,9 @@ pip install -e '.[dev]'
 ```
 
 ### Windows Application
-[Click here](https://github.com/GradientHQ/parallax_win_cli/releases/latest/download/Parallax_Win_Setup.exe) to get latest Windows installer.
+> **Note:** The Windows installer is provided by upstream Parallax. There is no Toolkit-branded Windows installer at this time.
+
+[Click here](https://github.com/GradientHQ/parallax_win_cli/releases/latest/download/Parallax_Win_Setup.exe) to get the upstream Windows installer.
 
 After installing .exe, right click Windows start button and click ```Windows Terminal(Admin)``` to start a Powershell console as administrator.
 
@@ -99,10 +101,10 @@ The container starts under parallax workspace and you should be able to run para
 
 ### Uninstalling Parallax
 
-For macOS or Linux, if you've installed Parallax via pip and want to uninstall it, you can use the following command:
+For macOS or Linux, if you've installed via pip and want to uninstall, you can use the following command:
 
 ```sh
-pip uninstall parallax
+pip uninstall toolkit-inference-mesh
 ```
 
 For Docker installations, remove Parallax images and containers using standard Docker commands:

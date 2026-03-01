@@ -289,8 +289,11 @@ class RequestHandler:
             if tokens_out is not None:
                 event["tokens_out"] = int(tokens_out)
             append_inference_event(event)
-        except Exception:
-            return
+        except Exception as e:
+            logger.error(
+                f"Failed to emit inference event for request {request_id}: {e}",
+                exc_info=True,
+            )
 
     async def v1_chat_completions(
         self, request_data: Dict, request_id: str, received_ts: int, request: Request | None = None

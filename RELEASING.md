@@ -14,7 +14,7 @@
 
 ## Build and publish
 
-From `enterprise-tools/inference-mesh/`:
+From the repository root:
 
 ```bash
 python -m pip install -U build twine

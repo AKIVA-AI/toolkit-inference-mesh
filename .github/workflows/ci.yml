@@ -37,15 +37,15 @@ jobs:
     
     - name: Lint with ruff
       run: |
-        ruff check src/ tests/ || true
-    
+        ruff check src/ tests/
+
     - name: Format check with black
       run: |
-        black --check src/ tests/ || true
-    
+        black --check src/ tests/
+
     - name: Type check with mypy
       run: |
-        mypy src/ || true
+        mypy src/
     
     - name: Run tests
       run: |
@@ -76,11 +76,11 @@ jobs:
     
     - name: Security scan with bandit
       run: |
-        bandit -r src/ -f json -o bandit-report.json || true
-    
+        bandit -r src/ -f json -o bandit-report.json
+
     - name: Check dependencies with safety
       run: |
-        safety check --json || true
+        safety check --json
 
   docker:
     runs-on: ubuntu-latest
