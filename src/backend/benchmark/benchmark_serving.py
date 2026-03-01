@@ -76,7 +76,7 @@ def is_file_valid_json(path):
 def download_and_cache_file(url: str, filename: Optional[str] = None):
     """Read and cache a file from a url."""
     if filename is None:
-        filename = os.path.join("/tmp", url.split("/")[-1])
+        filename = os.path.join("/tmp", url.split("/")[-1])  # nosec B108
 
     # Check if the cache file already exists
     if is_file_valid_json(filename):
@@ -85,7 +85,7 @@ def download_and_cache_file(url: str, filename: Optional[str] = None):
     print(f"Downloading from {url} to {filename}")
 
     # Stream the response to show the progress bar
-    response = requests.get(url, stream=True)
+    response = requests.get(url, stream=True, timeout=300)  # nosec B113
     response.raise_for_status()  # Check for request errors
 
     # Total size of the file in bytes
@@ -191,7 +191,9 @@ def sample_wildchat_requests(
     fixed_output_len: Optional[int] = None,
 ) -> List[Tuple[str, int, int, None]]:
     dataset = load_dataset(dataset_path, split="train")
-    filter_func = lambda x: len(x["conversation"]) >= 2
+    def filter_func(x):
+        return len(x["conversation"]) >= 2
+
     filtered_dataset = dataset.shuffle(seed=random_seed).filter(filter_func)
     sampled_requests: List[Tuple[str, int, int, Dict[str, Collection[str]]]] = []
     for data in filtered_dataset:
@@ -231,7 +233,9 @@ def sample_hf_requests(
 
     dataset = load_dataset(dataset_path, name=dataset_subset, split=dataset_split, streaming=True)
     assert "conversations" in dataset.features, "HF Dataset must have 'conversations' column."
-    filter_func = lambda x: len(x["conversations"]) >= 2
+    def filter_func(x):
+        return len(x["conversations"]) >= 2
+
     filtered_dataset = dataset.shuffle(seed=random_seed).filter(filter_func)
     sampled_requests: List[Tuple[str, int, int, Dict[str, Collection[str]]]] = []
     for data in filtered_dataset:
@@ -309,6 +313,66 @@ def sample_random_requests(
         )
 
         input_requests.append((prompt, int(prefix_len + input_lens[i]), int(output_lens[i]), None))
+
+    return input_requests
+
+
+def sample_sonnet_requests(
+    dataset_path: str,
+    num_requests: int,
+    input_len: int,
+    output_len: int,
+    prefix_len: int,
+    tokenizer: PreTrainedTokenizerBase,
+) -> List[Tuple[str, str, int, int, None]]:
+    """Sample requests from a sonnet dataset.
+
+    Adapted from vLLM benchmark_serving.py. Reads lines from the dataset file,
+    concatenates them to approximate the requested input length, and formats
+    each prompt using the tokenizer's chat template when available.
+    """
+    assert input_len > prefix_len, "input_len must be greater than prefix_len"
+    if not os.path.isfile(dataset_path):
+        raise FileNotFoundError(f"Dataset file not found: {dataset_path}")
+
+    with open(dataset_path) as f:
+        poem_lines = f.readlines()
+
+    # Prefix shared across prompts
+    prefix_token_ids = tokenizer(
+        "".join(poem_lines[:prefix_len])
+    ).input_ids
+    prefix_text = tokenizer.decode(prefix_token_ids)
+
+    input_requests: List[Tuple[str, str, int, int, None]] = []
+    for _ in range(num_requests):
+        # Build a prompt by concatenating poem lines until we hit the target length
+        prompt_lines: List[str] = []
+        current_len = len(prefix_token_ids)
+        line_idx = prefix_len
+        while current_len < input_len and line_idx < len(poem_lines):
+            prompt_lines.append(poem_lines[line_idx])
+            current_len += len(tokenizer(poem_lines[line_idx]).input_ids)
+            line_idx += 1
+
+        prompt = prefix_text + "".join(prompt_lines)
+        prompt_token_ids = tokenizer(prompt).input_ids
+        prompt_len = len(prompt_token_ids)
+
+        # Format using chat template if available
+        prompt_formatted = prompt
+        if hasattr(tokenizer, "apply_chat_template"):
+            try:
+                messages = [{"role": "user", "content": prompt}]
+                prompt_formatted = tokenizer.apply_chat_template(
+                    messages, tokenize=False, add_generation_prompt=True
+                )
+            except Exception:
+                pass
+
+        input_requests.append(
+            (prompt, prompt_formatted, prompt_len, output_len, None)
+        )
 
     return input_requests
 

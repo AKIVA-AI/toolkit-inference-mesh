@@ -212,7 +212,7 @@ class VLLMExecutor(BaseExecutor):
         # For vLLM, pp_proxy_tensors is already an IntermediateTensors object
         intermediate_tensors = pp_proxy_tensors if pp_proxy_tensors is not None else None
         if intermediate_tensors is not None:
-            logger.debug(f"vLLM: Using intermediate_tensors for PP (non-first peer)")
+            logger.debug("vLLM: Using intermediate_tensors for PP (non-first peer)")
 
         # Import IntermediateTensors for type checking
 

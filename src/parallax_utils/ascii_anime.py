@@ -59,7 +59,7 @@ class HexColorPrinter:
 
 def clear_screen():
     # Clear screen command for different operating systems
-    os.system("cls" if os.name == "nt" else "clear")
+    os.system("cls" if os.name == "nt" else "clear")  # nosec B605
 
 
 def handle_colors_data(raw_data):

@@ -1,6 +1,7 @@
 import asyncio
 import json
 import time
+import uuid
 from typing import Dict
 
 import fastapi
@@ -17,8 +18,6 @@ from parallax_utils.file_util import get_project_root
 from parallax_utils.logging_config import get_logger
 
 logger = get_logger(__name__)
-
-import uuid
 
 # Fast API
 app = fastapi.FastAPI(

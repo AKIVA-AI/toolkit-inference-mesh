@@ -396,7 +396,7 @@ def initialize_vllm_model_runner(
     import vllm.distributed.parallel_state as parallel_state
 
     if not parallel_state.model_parallel_is_initialized():
-        logger.debug(f"Initializing vLLM distributed environment...")
+        logger.debug("Initializing vLLM distributed environment...")
 
         # Set environment variables for distributed initialization
         if "RANK" not in os.environ:
@@ -449,7 +449,7 @@ def initialize_vllm_model_runner(
                     f"is_last_rank={parallax_pp_group.is_last_rank}"
                 )
 
-            logger.debug(f"vLLM distributed environment initialized")
+            logger.debug("vLLM distributed environment initialized")
         except Exception as e:
             logger.warning(f"Failed to initialize distributed environment: {e}")
             logger.error(f"vLLM distributed initialization failed. Error: {e}")

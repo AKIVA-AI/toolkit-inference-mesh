@@ -2,7 +2,7 @@ import asyncio
 from http import HTTPStatus
 
 try:
-    import torch  # type: ignore
+    import torch  # type: ignore  # noqa: F401
 except Exception:  # pragma: no cover - torch might be unavailable in CI
     import importlib.machinery
     import sys

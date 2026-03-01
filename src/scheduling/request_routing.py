@@ -69,8 +69,8 @@ class DynamicProgrammingRouting(RequestRoutingStrategy):
 
         # Build host lists per layer using start/end layer ranges
         layer_hosts: List[List[int]] = []
-        for l in range(num_layers):
-            hosts = [i for i, n in enumerate(nodes) if n.hosts_layer(l)]
+        for li in range(num_layers):
+            hosts = [i for i, n in enumerate(nodes) if n.hosts_layer(li)]
             layer_hosts.append(hosts)
 
         # If any layer lacks a host, return empty
@@ -85,15 +85,15 @@ class DynamicProgrammingRouting(RequestRoutingStrategy):
         for i in layer_hosts[0]:
             dp[0][i] = nodes[i].layer_latency_ms
 
-        # Recurrrence: dp[l+1][g] = min_g' (dp[l][g] + rtt(g,g') + latency(g'))
-        for l in range(1, num_layers):
-            curr: Dict[int, float] = {i: float("inf") for i in layer_hosts[l]}
-            prev_back: Dict[int, Optional[int]] = {i: None for i in layer_hosts[l]}
-            for i in layer_hosts[l]:
+        # Recurrrence: dp[li+1][g] = min_g' (dp[li][g] + rtt(g,g') + latency(g'))
+        for li in range(1, num_layers):
+            curr: Dict[int, float] = {i: float("inf") for i in layer_hosts[li]}
+            prev_back: Dict[int, Optional[int]] = {i: None for i in layer_hosts[li]}
+            for i in layer_hosts[li]:
                 node_i = nodes[i]
                 best_cost = float("inf")
                 best_j: Optional[int] = None
-                for j, prev_cost in dp[l - 1].items():
+                for j, prev_cost in dp[li - 1].items():
                     if prev_cost == float("inf"):
                         continue
                     node_j = nodes[j]
@@ -111,8 +111,8 @@ class DynamicProgrammingRouting(RequestRoutingStrategy):
         last = dp[-1]
         end_i = min(last, key=lambda k: last[k])
         path_idx: List[int] = [end_i]
-        for l in range(num_layers - 1, 0, -1):
-            prev_i = back[l][path_idx[-1]]
+        for li in range(num_layers - 1, 0, -1):
+            prev_i = back[li][path_idx[-1]]
             if prev_i is None:
                 break
             path_idx.append(prev_i)
@@ -120,27 +120,27 @@ class DynamicProgrammingRouting(RequestRoutingStrategy):
 
         # Identify turning points: tail truncations when switching away
         turning: List[Tuple[str, int, str]] = []
-        for l in range(1, len(path_idx)):
-            prev_i = path_idx[l - 1]
-            cur_i = path_idx[l]
+        for li in range(1, len(path_idx)):
+            prev_i = path_idx[li - 1]
+            cur_i = path_idx[li]
             if prev_i == cur_i:
                 continue
             prev_node = nodes[prev_i]
-            if prev_node.hosts_layer(l):
-                turning.append((nodes[prev_i].node_id, l, "tail"))
+            if prev_node.hosts_layer(li):
+                turning.append((nodes[prev_i].node_id, li, "tail"))
         # Identify front truncations: for each node on the path, if the first
         # layer used is greater than its hosted start, we can drop the prefix
         # [start, first_used_layer)
         first_used: Dict[int, int] = {}
-        for l, idx in enumerate(path_idx):
+        for li, idx in enumerate(path_idx):
             if idx not in first_used:
-                first_used[idx] = l
-        for idx, l0 in first_used.items():
+                first_used[idx] = li
+        for idx, first_layer in first_used.items():
             n = nodes[idx]
             if n.start_layer is None:
                 continue
-            if l0 > n.start_layer:
-                turning.append((n.node_id, l0, "head"))
+            if first_layer > n.start_layer:
+                turning.append((n.node_id, first_layer, "head"))
         return turning
 
     def find_optimal_path(self, nodes: List[Node], num_layers: int) -> Tuple[List[str], float]:

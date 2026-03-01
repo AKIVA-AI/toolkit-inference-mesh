@@ -192,7 +192,7 @@ class MLXExecutor(BaseExecutor):
         try:
             mx.set_wired_limit(mx.metal.device_info()["max_recommended_working_set_size"])
         except Exception:
-            logger.warning(f"Using mlx without metal backend.")
+            logger.warning("Using mlx without metal backend.")
 
         # Prefix Cache Manager
         self.enable_prefix_cache = enable_prefix_cache

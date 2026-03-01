@@ -5,11 +5,11 @@ from pathlib import Path
 from typing import Optional
 
 from huggingface_hub import HfApi, hf_hub_download, snapshot_download
-
-logger = logging.getLogger(__name__)
 from parallax.utils.weight_filter_utils import (
     determine_needed_weight_files_for_download,
 )
+
+logger = logging.getLogger(__name__)
 
 # Monkey patch HfApi.repo_info to add short timeout for faster failure on network issues
 # This prevents snapshot_download from hanging silently when Hugging Face Hub is unreachable

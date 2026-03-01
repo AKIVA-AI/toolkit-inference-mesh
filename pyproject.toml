@@ -92,3 +92,13 @@ profile = "black"
 ignore = ["E501"]              # line length handled by Black
 line-length = 100
 
+[tool.bandit]
+# B101: assert_used - asserts are intentional for validation
+# B110: try_except_pass - intentional best-effort exception handling
+# B112: try_except_continue - intentional best-effort exception handling
+# B311: random - not used for security/crypto purposes
+# B404: subprocess import - subprocess used for system tooling, not user input
+# B603: subprocess_without_shell - controlled invocations, no untrusted input
+# B607: start_process_with_partial_path - controlled invocations
+skips = ["B101", "B110", "B112", "B311", "B404", "B603", "B607"]
+

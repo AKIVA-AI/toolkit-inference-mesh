@@ -154,13 +154,13 @@ class MLXModelLoader:
                 if hasattr(m, "to_lora") or isinstance(m, types):
                     keys.add(p)
 
-            for l in model.layers:
-                l.apply_to_modules(get_keys_for_lora)
+            for layer in model.layers:
+                layer.apply_to_modules(get_keys_for_lora)
 
-        for l in model.layers[-max(num_layers, 0) :]:
-            lora_layers = [(k, to_lora(m)) for k, m in l.named_modules() if k in keys]
+        for layer in model.layers[-max(num_layers, 0) :]:
+            lora_layers = [(k, to_lora(m)) for k, m in layer.named_modules() if k in keys]
             if lora_layers:
-                l.update_modules(tree_unflatten(lora_layers))
+                layer.update_modules(tree_unflatten(lora_layers))
 
         lora_modules = [(k, to_lora(m)) for k, m in model.named_modules() if k in keys]
         if lora_modules:

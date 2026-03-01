@@ -74,9 +74,9 @@ class TestPagedKVIntegration(unittest.TestCase):
         )
 
         for b in range(batch_size):
-            for l in range(seq_lens[b]):
-                keys_np[b, l, :, :] = b * 1000 + l
-                values_np[b, l, :, :] = -(b * 1000 + l)
+            for seq_idx in range(seq_lens[b]):
+                keys_np[b, seq_idx, :, :] = b * 1000 + seq_idx
+                values_np[b, seq_idx, :, :] = -(b * 1000 + seq_idx)
 
         keys = mx.array(keys_np)
         values = mx.array(values_np)

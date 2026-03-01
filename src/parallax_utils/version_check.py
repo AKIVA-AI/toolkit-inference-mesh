@@ -25,7 +25,7 @@ def check_latest_release():
     version = get_current_version()
     GITHUB_API = "https://api.github.com/repos/GradientHQ/parallax/releases/latest"
     try:
-        with urllib.request.urlopen(GITHUB_API, timeout=4) as response:
+        with urllib.request.urlopen(GITHUB_API, timeout=4) as response:  # nosec B310
             data = json.loads(response.read())
             latest = data.get("tag_name") or data.get("name")
             if latest:

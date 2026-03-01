@@ -76,7 +76,7 @@ jobs:
     
     - name: Security scan with bandit
       run: |
-        bandit -r src/ -f json -o bandit-report.json
+        bandit -r src/ -c pyproject.toml -f json -o bandit-report.json
 
     - name: Check dependencies with safety
       run: |

@@ -1,5 +1,7 @@
+import json
 import time
 
+import httpx
 from lattica import ConnectionHandler, Lattica, rpc_method, rpc_stream, rpc_stream_iter
 
 from parallax_utils.logging_config import get_logger
@@ -7,10 +9,6 @@ from scheduling.node import Node, NodeHardwareInfo
 from scheduling.scheduler import Scheduler
 
 logger = get_logger(__name__)
-
-import json
-
-import httpx
 
 
 class RPCConnectionHandler(ConnectionHandler):
