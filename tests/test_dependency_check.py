@@ -2,7 +2,6 @@ import importlib.util
 
 import pytest
 
-
 REQUIRED_MODULES = ("mlx", "mlx_lm", "zmq")
 
 

@@ -1,6 +1,5 @@
 import importlib.util
 
-
 REQUIRED_MODULES = ("mlx", "mlx_lm", "zmq")
 MISSING_MODULES = [name for name in REQUIRED_MODULES if importlib.util.find_spec(name) is None]
 
