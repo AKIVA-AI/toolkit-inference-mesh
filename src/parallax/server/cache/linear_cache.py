@@ -6,7 +6,6 @@ from parallax.server.cache.base import BaseCache
 
 
 class LinearCache(BaseCache):
-
     def __init__(
         self,
         max_num_seqs: int = 128,

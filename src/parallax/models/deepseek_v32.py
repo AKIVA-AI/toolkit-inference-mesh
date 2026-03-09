@@ -105,7 +105,6 @@ class ParallaxDeepSeekV32Indexer(MLXDeepseekV32Indexer):
 
 
 class ParallaxDeepSeekV32Attention(MLXDeepseekV32Attention):
-
     def __init__(self, args: ModelArgs):
         super().__init__(args)
         self.indexer = ParallaxDeepSeekV32Indexer(args)

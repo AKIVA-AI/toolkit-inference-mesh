@@ -860,9 +860,9 @@ def main(args: argparse.Namespace):
                 for prompt, prompt_formatted, prompt_len, output_len, _ in input_requests
             ]
         else:
-            assert (
-                tokenizer.chat_template or tokenizer.default_chat_template
-            ), "Tokenizer/model must have chat template for sonnet dataset."
+            assert tokenizer.chat_template or tokenizer.default_chat_template, (
+                "Tokenizer/model must have chat template for sonnet dataset."
+            )
             input_requests = sample_sonnet_requests(
                 dataset_path=args.dataset_path,
                 num_requests=args.num_prompts,
@@ -1001,7 +1001,7 @@ if __name__ == "__main__":
         "--dataset",
         type=str,
         default=None,
-        help="Path to the ShareGPT dataset, will be deprecated in the " "next release.",
+        help="Path to the ShareGPT dataset, will be deprecated in the next release.",
     )
     parser.add_argument(
         "--dataset-name",
@@ -1046,7 +1046,7 @@ if __name__ == "__main__":
         "--best-of",
         type=int,
         default=1,
-        help="Generates `best_of` sequences per prompt and " "returns the best one.",
+        help="Generates `best_of` sequences per prompt and returns the best one.",
     )
     parser.add_argument("--use-beam-search", action="store_true")
     parser.add_argument(
@@ -1218,7 +1218,7 @@ if __name__ == "__main__":
         "--random-range-ratio",
         type=float,
         default=1.0,
-        help="Range of sampled ratio of input/output length, " "used only for random sampling.",
+        help="Range of sampled ratio of input/output length, used only for random sampling.",
     )
     random_group.add_argument(
         "--random-prefix-len",

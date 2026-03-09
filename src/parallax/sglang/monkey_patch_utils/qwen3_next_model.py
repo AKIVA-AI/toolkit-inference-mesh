@@ -101,9 +101,9 @@ def apply_qwen3_next_monkey_patch():
             )
             residual = None
         else:
-            assert (
-                pp_proxy_tensors is not None
-            ), "pp_proxy_tensors must be provided on non-first PP ranks"
+            assert pp_proxy_tensors is not None, (
+                "pp_proxy_tensors must be provided on non-first PP ranks"
+            )
             hidden_states = pp_proxy_tensors["hidden_states"]
             residual = pp_proxy_tensors["residual"]
 

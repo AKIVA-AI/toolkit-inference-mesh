@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import sys
-import time
 from pathlib import Path
 
 import pytest
@@ -33,7 +32,7 @@ if mlx_spec is not None:
     class TestTreeNode:
         def test_counter_increments(self):
             start = TreeNode.counter
-            n1 = TreeNode()
+            TreeNode()  # increment counter
             n2 = TreeNode()
             assert n2.node_id == start + 1
 

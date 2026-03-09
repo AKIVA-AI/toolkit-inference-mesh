@@ -119,7 +119,6 @@ def _create_kv_cache_config_from_specs(
 
 
 class ParallaxVLLMModelRunner(GPUModelRunner):
-
     def __init__(
         self,
         vllm_config: VllmConfig,
@@ -350,7 +349,7 @@ def initialize_vllm_model_runner(
     from parallax.utils.selective_download import get_model_path_with_selective_download
 
     logger.info(
-        f"Initializing vLLM model runner for {model_repo}, " f"layers=[{start_layer}, {end_layer})"
+        f"Initializing vLLM model runner for {model_repo}, layers=[{start_layer}, {end_layer})"
     )
 
     model_path = get_model_path_with_selective_download(

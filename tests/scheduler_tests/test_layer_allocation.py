@@ -41,8 +41,8 @@ def test_capacity_sanity_check():
     model = build_model_info(36)
     print(f"decoder layer flops: {model.decoder_layer_flops}")
     print(f"lm head flops: {model.lm_head_flops}")
-    print(f"decoder layer io in GB: {model.decoder_layer_io_bytes(roofline=False) / (1024 ** 3)}")
-    print(f"embedding table in GB: {model.embedding_io_bytes / (1024 ** 3)}")
+    print(f"decoder layer io in GB: {model.decoder_layer_io_bytes(roofline=False) / (1024**3)}")
+    print(f"embedding table in GB: {model.embedding_io_bytes / (1024**3)}")
 
     for gpu_type in ["a100-80g", "a100-40g", "rtx5090", "rtx4090"]:
         # (capacity, with embed) -> (13, 13), (6, 6), (5, 5), (4, 3)
@@ -222,9 +222,9 @@ def test_allocator(
     expected_total = sum(e - s for (s, e) in expected_ranges)
     assert sum(e - s for (s, e) in actual_trimmed) == expected_total
     # Order-insensitive comparison: ranges represent stages; allow pipeline reordering
-    assert Counter(actual_trimmed) == Counter(
-        expected_ranges
-    ), f"Stage ranges mismatch (order-insensitive):\nactual={actual_trimmed}\nexpected={expected_ranges}"
+    assert Counter(actual_trimmed) == Counter(expected_ranges), (
+        f"Stage ranges mismatch (order-insensitive):\nactual={actual_trimmed}\nexpected={expected_ranges}"
+    )
 
 
 @pytest.mark.parametrize("strategy", ["greedy", "dp"])

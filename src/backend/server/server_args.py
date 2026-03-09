@@ -1,4 +1,4 @@
-﻿import argparse
+import argparse
 from pathlib import Path
 
 from parallax_utils.logging_config import get_logger

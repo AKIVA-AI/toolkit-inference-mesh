@@ -1,4 +1,4 @@
-﻿"""
+"""
 Utility functions for P2P server.
 
 This module contains utility functions for the P2P server.

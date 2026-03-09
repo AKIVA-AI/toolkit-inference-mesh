@@ -13,7 +13,6 @@ from parallax.server.cache.base import BaseCache
 
 
 class ParallaxMiniMaxAttention(MLXMiniMaxAttention):
-
     def __call__(
         self,
         x: mx.array,

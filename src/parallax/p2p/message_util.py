@@ -1,4 +1,4 @@
-﻿"""
+"""
 Utility functions for message serialization and deserialization.
 
 This module contains utility functions for serializing and deserializing messages
@@ -25,9 +25,9 @@ def request_to_proto(
     """
     forward_request = forward_pb2.ForwardRequest()
     assert len(requests) > 0, "No requests to convert"
-    assert all(
-        request.status == requests[0].status for request in requests
-    ), "All requests must have the same status"
+    assert all(request.status == requests[0].status for request in requests), (
+        "All requests must have the same status"
+    )
     if requests[0].status == RequestStatus.PREFILLING:
         forward_request.forward_mode = forward_pb2.ForwardMode.EXTEND
     elif requests[0].status == RequestStatus.DECODING:

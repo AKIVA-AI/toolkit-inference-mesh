@@ -25,9 +25,9 @@ def _parallax_load_mxfp4_experts_weights(self, weights):
     moe_ep_size = get_moe_expert_parallel_world_size()
 
     intermediate_size = self.config.intermediate_size
-    assert (
-        intermediate_size % mxfp4_block == 0
-    ), f"{intermediate_size=} must be divisible by {mxfp4_block=}"
+    assert intermediate_size % mxfp4_block == 0, (
+        f"{intermediate_size=} must be divisible by {mxfp4_block=}"
+    )
     intermediate_size_block = intermediate_size // mxfp4_block
 
     per_rank_intermediate_size_block = math.ceil(intermediate_size_block / moe_tp_size)

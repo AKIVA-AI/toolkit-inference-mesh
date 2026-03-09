@@ -39,7 +39,6 @@ def parallax_triton_backend_init(
         # For hybrid linear models, layer_id = 0 may not be full attention
         self.v_head_dim = model_runner.token_to_kv_pool.get_v_head_dim()
     else:
-
         ################################################################################
         ## Patch for PP: get pp_start_layer
         self.v_head_dim = model_runner.token_to_kv_pool.get_value_buffer(

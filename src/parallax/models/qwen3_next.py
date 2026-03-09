@@ -18,7 +18,6 @@ from parallax.server.cache.base import BaseCache
 
 
 class ParallaxQwen3NextAttention(MLXQwen3NextAttention):
-
     def __call__(
         self,
         x: mx.array,
@@ -153,7 +152,6 @@ class ParallaxQwen3NextGatedDeltaNet(MLXQwen3NextGatedDeltaNet):
 
 
 class ParallaxQwen3NextBlock(MLXQwen3NextBlock):
-
     def __init__(self, args: ModelArgs, layer_idx: int, local_layer_idx: int):
         super().__init__(args, layer_idx)
         self.layer_idx = layer_idx

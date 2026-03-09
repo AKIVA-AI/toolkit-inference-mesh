@@ -15,6 +15,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 mlx_spec = None
 try:
     import importlib.util
+
     mlx_spec = importlib.util.find_spec("mlx")
 except Exception:
     pass
@@ -25,11 +26,13 @@ pytestmark = pytest.mark.skipif(mlx_spec is None, reason="mlx not installed")
 @pytest.fixture
 def mock_allocators():
     """Patch BlockAllocator and SlotAllocator."""
-    with patch("parallax.server.cache_manager.BlockAllocator") as mock_ba, \
-         patch("parallax.server.cache_manager.SlotAllocator") as mock_sa, \
-         patch("parallax.server.cache_manager.KVCache") as mock_kv, \
-         patch("parallax.server.cache_manager.DeepSeekSparseCache") as mock_dsa, \
-         patch("parallax.server.cache_manager.LinearCache") as mock_lc:
+    with (
+        patch("parallax.server.cache_manager.BlockAllocator") as mock_ba,
+        patch("parallax.server.cache_manager.SlotAllocator") as mock_sa,
+        patch("parallax.server.cache_manager.KVCache") as mock_kv,
+        patch("parallax.server.cache_manager.DeepSeekSparseCache") as mock_dsa,
+        patch("parallax.server.cache_manager.LinearCache") as mock_lc,
+    ):
         mock_ba_inst = MagicMock()
         mock_ba.return_value = mock_ba_inst
         mock_sa_inst = MagicMock()

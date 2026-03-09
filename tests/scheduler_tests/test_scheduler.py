@@ -130,9 +130,9 @@ def test_scheduler_single_node_leave_then_rejoin_reassigns_layers():
     sched._process_joins()  # type: ignore[attr-defined]
 
     # Expected behavior: after re-join with min_nodes_bootstrapping=1, layers are assigned again
-    assert (
-        n1_rejoin.start_layer is not None and n1_rejoin.end_layer is not None
-    ), "After re-join, single node should be assigned a full layer range"
+    assert n1_rejoin.start_layer is not None and n1_rejoin.end_layer is not None, (
+        "After re-join, single node should be assigned a full layer range"
+    )
 
 
 def test_scheduler_three_nodes_sequential_join_leave_rejoin():

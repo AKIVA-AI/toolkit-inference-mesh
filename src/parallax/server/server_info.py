@@ -248,7 +248,8 @@ class ShardedModelInfo:
 
     @classmethod
     def from_sharded_model(
-        cls, sharded_model_instance: nn.Module  # Instance of your ShardedModel
+        cls,
+        sharded_model_instance: nn.Module,  # Instance of your ShardedModel
     ) -> "ShardedModelInfo":
         """
         Constructs ShardedModelInfo from a loaded ShardedModel instance.

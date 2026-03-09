@@ -9,7 +9,6 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
@@ -71,7 +70,7 @@ class TestPipelineIntegration:
             sched.enque_request(_make_initial(f"r{i}", prompt_len=5))
 
         cache = FakeCacheManager()
-        batch = sched.get_next_batch(cache)
+        sched.get_next_batch(cache)
 
         # All 4 should be admitted (within batch limit)
         for i in range(4):
@@ -84,7 +83,7 @@ class TestPipelineIntegration:
             sched.enque_request(_make_initial(f"r{i}", prompt_len=5))
 
         cache = FakeCacheManager(max_reqs=2)
-        batch = sched.get_next_batch(cache)
+        sched.get_next_batch(cache)
 
         # Only 2 should be admitted
         admitted = sum(1 for i in range(4) if cache.has_request(f"r{i}"))
@@ -103,11 +102,14 @@ class TestPipelineIntegration:
             sched.enque_request(_make_initial(f"prefill-{i}", prompt_len=5))
 
         cache = FakeCacheManager()
-        batch = sched.get_next_batch(cache)
+        sched.get_next_batch(cache)
 
         # The decode request should still be running
-        assert any(r.request_id == "decode-1" for r in sched.running_requests) or \
-               cache.has_request("decode-1") or True  # decode was already running
+        assert (
+            any(r.request_id == "decode-1" for r in sched.running_requests)
+            or cache.has_request("decode-1")
+            or True
+        )  # decode was already running
 
     def test_request_status_transitions(self):
         """Verify request status is set correctly during pipeline stages."""
@@ -142,7 +144,7 @@ class TestPipelineIntegration:
         sched.enque_request(_make_initial("large", prompt_len=200))
 
         cache = FakeCacheManager()
-        batch = sched.get_next_batch(cache)
+        sched.get_next_batch(cache)
 
         # Small should be admitted; large may be deferred or handled
         assert cache.has_request("small")

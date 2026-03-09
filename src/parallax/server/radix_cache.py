@@ -405,9 +405,9 @@ class RadixCache:
             for key, child in current_node.children.items():
                 stack.append((child, current_indent + 2))
 
-                assert key == self.get_child_key_fn(
-                    child.key
-                ), f"{key=}, {self.get_child_key_fn(child.key)=}"
+                assert key == self.get_child_key_fn(child.key), (
+                    f"{key=}, {self.get_child_key_fn(child.key)=}"
+                )
 
     def _total_size_helper(self):
         """Get total number of tokens stored helper function"""

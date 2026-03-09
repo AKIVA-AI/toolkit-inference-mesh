@@ -172,9 +172,9 @@ class Scheduler:
     def check_and_update_request_status(self, request: InitialRequest) -> bool:
         """Checks if a request has met any finishing conditions and updates its status."""
         assert self.is_first_peer, "Only first peer can check and update request status."
-        assert (
-            self.eos_token_id is not None
-        ), "EOS token ID must be set for request status checking."
+        assert self.eos_token_id is not None, (
+            "EOS token ID must be set for request status checking."
+        )
         if request.is_finished:
             return True
 

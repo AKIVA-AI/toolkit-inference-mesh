@@ -1,4 +1,4 @@
-﻿"""Tests for Toolkit event logging enhancements."""
+"""Tests for Toolkit event logging enhancements."""
 
 from __future__ import annotations
 

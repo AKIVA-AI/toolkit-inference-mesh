@@ -72,7 +72,6 @@ app.mount(
 
 
 class NodeChatHttpServer:
-
     def __init__(self, args):
         self.host = args.host
         self.port = args.node_chat_port

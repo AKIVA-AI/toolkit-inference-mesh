@@ -1,4 +1,4 @@
-﻿import json
+import json
 import time
 from typing import Dict
 
@@ -67,7 +67,7 @@ class RequestHandler:
             try:
                 routing_table = self.scheduler_manage.get_routing_table(request_id, received_ts)
                 logger.debug(
-                    f"get_routing_table for request {request_id} return: {routing_table} (attempt {attempts+1})"
+                    f"get_routing_table for request {request_id} return: {routing_table} (attempt {attempts + 1})"
                 )
             except Exception as e:
                 logger.exception(f"get_routing_table error: {e}")

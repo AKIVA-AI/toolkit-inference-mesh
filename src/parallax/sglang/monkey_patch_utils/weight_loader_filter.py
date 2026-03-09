@@ -60,7 +60,6 @@ def apply_weight_loader_filter_patch():
             and files
             and any(f.endswith((".safetensors", ".bin", ".pt")) for f in files)
         ):
-
             # Filter if we have layer range set
             global _layer_range_cache
             if _layer_range_cache.get("pp_start_layer") is not None:
