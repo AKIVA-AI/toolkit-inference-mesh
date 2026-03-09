@@ -186,9 +186,9 @@ def monkey_patch_initialize_model_parallel(
 
     if duplicate_tp_group:
         global _PDMUX_PREFILL_TP_GROUP
-        assert _PDMUX_PREFILL_TP_GROUP is None, (
-            "tensor model parallel group for PD-Multiplexing Prefill is already initialized"
-        )
+        assert (
+            _PDMUX_PREFILL_TP_GROUP is None
+        ), "tensor model parallel group for PD-Multiplexing Prefill is already initialized"
         _PDMUX_PREFILL_TP_GROUP = sglang.srt.distributed.parallel_state.init_model_parallel_group(
             group_ranks,
             get_world_group().local_rank,

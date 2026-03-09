@@ -109,15 +109,15 @@ class TestPagedAttention:
         # Req 1 (len 5) -> Block 2, Offset 4
         cached_k_1 = new_k_cache[0, 2, :, 4, :]
         input_k_1 = k_new[1].squeeze(1)
-        assert mx.allclose(cached_k_1, input_k_1, atol=atol).item(), (
-            "Cache update failed for Req 1 (Key)"
-        )
+        assert mx.allclose(
+            cached_k_1, input_k_1, atol=atol
+        ).item(), "Cache update failed for Req 1 (Key)"
 
         cached_v_1 = new_v_cache[0, 2, :, 4, :]
         input_v_1 = v_new[1].squeeze(1)
-        assert mx.allclose(cached_v_1, input_v_1, atol=atol).item(), (
-            "Cache update failed for Req 1 (Value)"
-        )
+        assert mx.allclose(
+            cached_v_1, input_v_1, atol=atol
+        ).item(), "Cache update failed for Req 1 (Value)"
 
         # --- Step 2: Test paged_attention ---
         q = mx.random.uniform(shape=(BATCH_SIZE, NUM_HEADS, 1, HEAD_DIM)).astype(dtype)
@@ -156,9 +156,9 @@ class TestPagedAttention:
         )
         kernel_out_1 = output[1].squeeze(1).astype(mx.float32)
 
-        assert mx.allclose(kernel_out_1, ref_out[0], atol=atol).item(), (
-            f"Paged Attention mismatch for Req 1 with {dtype}"
-        )
+        assert mx.allclose(
+            kernel_out_1, ref_out[0], atol=atol
+        ).item(), f"Paged Attention mismatch for Req 1 with {dtype}"
 
     @pytest.mark.parametrize(
         "params",
@@ -269,9 +269,9 @@ class TestPagedAttention:
         diff = mx.abs(ref_out - kernel_out)
         max_diff = mx.max(diff).item()
 
-        assert max_diff < 1e-2, (
-            f"Large scale test failed for {params['desc']}, max_diff: {max_diff}"
-        )
+        assert (
+            max_diff < 1e-2
+        ), f"Large scale test failed for {params['desc']}, max_diff: {max_diff}"
 
     def test_benchmark_paged_vs_native(self):
         """

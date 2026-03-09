@@ -490,9 +490,9 @@ class GradientServer:
                     for req in forward_request.reqs:
                         # set routing table if not scheduler mode
                         if len(req.routing_table) == 0 and self.scheduler_addr is None:
-                            assert self.block_start_index == 0, (
-                                "Request routing table is not set for non-head rank"
-                            )
+                            assert (
+                                self.block_start_index == 0
+                            ), "Request routing table is not set for non-head rank"
 
                             req.routing_table.extend(self.routing_table)
                             logger.info(
@@ -540,9 +540,9 @@ class GradientServer:
                     for req in abort_request.reqs:
                         # set routing table if not scheduler mode
                         if len(req.routing_table) == 0 and self.scheduler_addr is None:
-                            assert self.block_start_index == 0, (
-                                "Request routing table is not set for non-head rank"
-                            )
+                            assert (
+                                self.block_start_index == 0
+                            ), "Request routing table is not set for non-head rank"
 
                             req.routing_table.extend(self.routing_table)
                             logger.info(

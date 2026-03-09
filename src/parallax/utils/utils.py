@@ -239,9 +239,9 @@ def create_causal_mask(seq_len: int, total_len: int, dtype=mx.bfloat16) -> mx.ar
     Returns:
         mx.array: A square matrix with -1e9 on the upper triangle (excluding the diagonal).
     """
-    assert total_len >= seq_len, (
-        f"Total lengths {total_len} should be no less than input sequence {seq_len}."
-    )
+    assert (
+        total_len >= seq_len
+    ), f"Total lengths {total_len} should be no less than input sequence {seq_len}."
     inf_value = get_infinite_value_by_dtype(dtype)
     mask = mx.triu(mx.full((seq_len, seq_len), -inf_value, dtype), k=1)
     if total_len == seq_len:

@@ -222,9 +222,9 @@ def test_allocator(
     expected_total = sum(e - s for (s, e) in expected_ranges)
     assert sum(e - s for (s, e) in actual_trimmed) == expected_total
     # Order-insensitive comparison: ranges represent stages; allow pipeline reordering
-    assert Counter(actual_trimmed) == Counter(expected_ranges), (
-        f"Stage ranges mismatch (order-insensitive):\nactual={actual_trimmed}\nexpected={expected_ranges}"
-    )
+    assert Counter(actual_trimmed) == Counter(
+        expected_ranges
+    ), f"Stage ranges mismatch (order-insensitive):\nactual={actual_trimmed}\nexpected={expected_ranges}"
 
 
 @pytest.mark.parametrize("strategy", ["greedy", "dp"])

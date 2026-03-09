@@ -272,9 +272,9 @@ class MLXExecutor(BaseExecutor):
         else:
             # Intermediate and Last peers receive IntermediateRequests from the previous peer.
             for req in requests:
-                assert isinstance(req, IntermediateRequest), (
-                    "Non-first peers must receive IntermediateRequests."
-                )
+                assert isinstance(
+                    req, IntermediateRequest
+                ), "Non-first peers must receive IntermediateRequests."
                 if req.is_finished or req.hidden_states is None:
                     if self.enable_prefix_cache:
                         keys, values = self.cache_manager.gather_kv_cache(req.request_id)
