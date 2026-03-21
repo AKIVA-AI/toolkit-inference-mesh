@@ -84,6 +84,7 @@ include = ["parallax*", "parallax_utils*", "scheduling*", "backend*"]
 
 [tool.black]
 line-length = 100
+target-version = ["py312"]
 
 [tool.isort]
 profile = "black"
