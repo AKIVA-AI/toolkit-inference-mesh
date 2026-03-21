@@ -8,6 +8,14 @@ _NO_HW_DEPS = {
     "test_dependency_check.py",
     "test_shared_state.py",
     "test_akiva_enhancements.py",
+    "test_model_info.py",
+    "test_node_scheduling.py",
+    "test_sampling_params.py",
+    "test_request_metrics.py",
+    "test_version_check.py",
+    "test_layer_allocation.py",
+    "test_routing_edge_cases.py",
+    "test_ascii_utils.py",
 }
 
 
