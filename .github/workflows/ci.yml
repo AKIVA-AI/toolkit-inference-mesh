@@ -44,7 +44,7 @@ jobs:
 
     - name: Format check with black
       run: |
-        black --check --target-version py312 src/ tests/
+        black --check --target-version py311 src/ tests/
 
     - name: Type check with mypy
       continue-on-error: true
