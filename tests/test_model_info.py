@@ -14,7 +14,6 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from scheduling.model_info import ModelInfo
@@ -233,12 +232,8 @@ class TestDecoderLayerIOBytes:
         assert io_param > 0
 
     def test_io_bytes_moe_intermediate_dim_overrides(self):
-        m1 = _base_model(
-            num_local_experts=8, num_experts_per_tok=2, moe_intermediate_dim=1024
-        )
-        m2 = _base_model(
-            num_local_experts=8, num_experts_per_tok=2, moe_intermediate_dim=4096
-        )
+        m1 = _base_model(num_local_experts=8, num_experts_per_tok=2, moe_intermediate_dim=1024)
+        m2 = _base_model(num_local_experts=8, num_experts_per_tok=2, moe_intermediate_dim=4096)
         io1 = m1.decoder_layer_io_bytes(roofline=False)
         io2 = m2.decoder_layer_io_bytes(roofline=False)
         assert io2 > io1

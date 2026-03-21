@@ -13,7 +13,6 @@ import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from parallax_utils.version_check import check_latest_release, get_current_version
@@ -28,7 +27,9 @@ class TestGetCurrentVersion:
 
     def test_fallback_to_unknown(self):
         """When both metadata and module fail, returns 'unknown'."""
-        with patch("parallax_utils.version_check.importlib.metadata.version", side_effect=Exception):
+        with patch(
+            "parallax_utils.version_check.importlib.metadata.version", side_effect=Exception
+        ):
             with patch.dict(sys.modules, {"parallax": None}):
                 version = get_current_version()
                 # May return 'unknown' or the actual version if installed
@@ -51,7 +52,9 @@ class TestCheckLatestRelease:
         mock_response.__enter__ = lambda s: s
         mock_response.__exit__ = MagicMock(return_value=False)
 
-        with patch("parallax_utils.version_check.urllib.request.urlopen", return_value=mock_response):
+        with patch(
+            "parallax_utils.version_check.urllib.request.urlopen", return_value=mock_response
+        ):
             with patch("parallax_utils.version_check.get_current_version", return_value="0.1.0"):
                 check_latest_release()
 
@@ -66,7 +69,9 @@ class TestCheckLatestRelease:
         mock_response.__enter__ = lambda s: s
         mock_response.__exit__ = MagicMock(return_value=False)
 
-        with patch("parallax_utils.version_check.urllib.request.urlopen", return_value=mock_response):
+        with patch(
+            "parallax_utils.version_check.urllib.request.urlopen", return_value=mock_response
+        ):
             with patch("parallax_utils.version_check.get_current_version", return_value="0.1.2"):
                 check_latest_release()
 
@@ -81,5 +86,7 @@ class TestCheckLatestRelease:
         mock_response.__enter__ = lambda s: s
         mock_response.__exit__ = MagicMock(return_value=False)
 
-        with patch("parallax_utils.version_check.urllib.request.urlopen", return_value=mock_response):
+        with patch(
+            "parallax_utils.version_check.urllib.request.urlopen", return_value=mock_response
+        ):
             check_latest_release()  # Should not raise

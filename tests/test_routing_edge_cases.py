@@ -15,7 +15,6 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 sys.path.insert(0, str(Path(__file__).parent))
 
@@ -272,9 +271,7 @@ class TestPipelineRepair:
         n3 = _node("n3", model, 4, 8)
 
         rr = RoundRobinPipelineRouting()
-        repaired = rr._attempt_repair_pipeline(
-            ["n1", "n2"], [n1, n2_overloaded, n3], 8
-        )
+        repaired = rr._attempt_repair_pipeline(["n1", "n2"], [n1, n2_overloaded, n3], 8)
         # Should find alternative via n3
         assert repaired is not None
         assert "n1" in repaired

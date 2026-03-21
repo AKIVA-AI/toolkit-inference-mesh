@@ -240,9 +240,7 @@ class TestRebalanceDecision:
     """Tests for should_global_rebalance."""
 
     def test_no_pipeline_triggers_rebalance(self):
-        alloc = TestBaseLayerAllocator._allocator(
-            TestBaseLayerAllocator(), num_nodes=2
-        )
+        alloc = TestBaseLayerAllocator._allocator(TestBaseLayerAllocator(), num_nodes=2)
         # No allocations -> no full pipeline -> should rebalance
         assert alloc.should_global_rebalance() is True
 
