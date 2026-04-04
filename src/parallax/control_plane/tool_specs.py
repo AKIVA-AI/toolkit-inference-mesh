@@ -9,6 +9,7 @@ require FULL_ACCESS + REQUIRE_APPROVAL (they bind ports and connect to
 external peer networks).  'chat' starts a local chat server and also
 requires explicit approval.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass

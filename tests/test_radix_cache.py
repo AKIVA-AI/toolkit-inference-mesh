@@ -18,6 +18,7 @@ pytestmark = pytest.mark.skipif(mlx_spec is None, reason="mlx not installed")
 
 if mlx_spec is not None:
     import mlx.core as mx
+
     from parallax.server.radix_cache import (
         RadixCache,
         TreeNode,

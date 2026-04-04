@@ -52,9 +52,9 @@ async def async_request_openai_completions(
     pbar: Optional[tqdm] = None,
 ) -> RequestFuncOutput:
     api_url = request_func_input.api_url
-    assert api_url.endswith(
-        ("completions", "profile")
-    ), "OpenAI Completions API URL must end with 'completions' or 'profile'."
+    assert api_url.endswith(("completions", "profile")), (
+        "OpenAI Completions API URL must end with 'completions' or 'profile'."
+    )
 
     async with aiohttp.ClientSession(trust_env=True, timeout=AIOHTTP_TIMEOUT) as session:
         payload = {
@@ -166,9 +166,9 @@ async def async_request_openai_chat_completions(
         timing metrics captured from the streaming response.
     """
     api_url = request_func_input.api_url
-    assert api_url.endswith(
-        "chat/completions"
-    ), "OpenAI Chat Completions API URL must end with 'chat/completions'."
+    assert api_url.endswith("chat/completions"), (
+        "OpenAI Chat Completions API URL must end with 'chat/completions'."
+    )
 
     async with aiohttp.ClientSession(trust_env=True, timeout=AIOHTTP_TIMEOUT) as session:
         content = [{"type": "text", "text": request_func_input.prompt}]

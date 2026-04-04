@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
+import sys
 import time
+from pathlib import Path
 from typing import Any, Dict
 from unittest.mock import MagicMock, patch
 
 import pytest
-
-import sys
-from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 

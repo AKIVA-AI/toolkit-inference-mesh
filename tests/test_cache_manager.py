@@ -50,6 +50,7 @@ def mock_allocators():
 
 if mlx_spec is not None:
     import mlx.core as mx
+
     from parallax.server.cache_manager import CacheManager
 
     class TestCacheManagerInit:

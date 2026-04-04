@@ -8,8 +8,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from starlette.concurrency import iterate_in_threadpool
 
 from backend.server.constants import NODE_STATUS_AVAILABLE
-from backend.server.toolkit_event_log import append_inference_event
-from backend.server.toolkit_event_log import estimate_cost_usd
+from backend.server.toolkit_event_log import append_inference_event, estimate_cost_usd
 from parallax_utils.logging_config import get_logger
 from parallax_utils.request_metrics import get_request_metrics
 

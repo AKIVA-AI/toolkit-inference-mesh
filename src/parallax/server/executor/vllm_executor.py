@@ -188,9 +188,9 @@ class VLLMExecutor(BaseExecutor):
         else:
             # Intermediate and Last peers receive IntermediateRequests from the previous peer.
             for req in requests:
-                assert isinstance(
-                    req, IntermediateRequest
-                ), "Non-first peers must receive IntermediateRequests."
+                assert isinstance(req, IntermediateRequest), (
+                    "Non-first peers must receive IntermediateRequests."
+                )
                 if req.is_finished or req.hidden_states is None:
                     self.release_and_evict_request(req.request_id)
                     if not self.is_last_peer:
@@ -201,12 +201,12 @@ class VLLMExecutor(BaseExecutor):
 
     def process_batch(self, prepared_inputs: Dict[str, Any], return_decoded_tokens: bool = True):
         """Process a batch of requests in vLLM."""
-        assert (
-            "scheduler_output" in prepared_inputs
-        ), "scheduler_output should be provided for vLLM backend"
-        assert (
-            "pp_proxy_tensors" in prepared_inputs
-        ), "pp_proxy_tensors should be in cuda prepared inputs"
+        assert "scheduler_output" in prepared_inputs, (
+            "scheduler_output should be provided for vLLM backend"
+        )
+        assert "pp_proxy_tensors" in prepared_inputs, (
+            "pp_proxy_tensors should be in cuda prepared inputs"
+        )
         scheduler_output = prepared_inputs["scheduler_output"]
         pp_proxy_tensors = prepared_inputs["pp_proxy_tensors"]
         # For vLLM, pp_proxy_tensors is already an IntermediateTensors object

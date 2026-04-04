@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Optional
 
 from huggingface_hub import HfApi, hf_hub_download, snapshot_download
+
 from parallax.utils.weight_filter_utils import (
     determine_needed_weight_files_for_download,
 )
