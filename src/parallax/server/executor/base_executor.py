@@ -668,9 +668,9 @@ class BaseExecutor:
         """
         # This peer is the last peer or a single node.
         if self.is_last_peer and self.is_first_peer:
-            assert isinstance(request, (InitialRequest, IntermediateRequest)), (
-                "Invalid request type for decoding."
-            )
+            assert isinstance(
+                request, (InitialRequest, IntermediateRequest)
+            ), "Invalid request type for decoding."
 
             next_token_id, hidden_states = self._gen_token_id_from_hidden(hidden_states)
             return IntermediateRequest(
@@ -686,9 +686,9 @@ class BaseExecutor:
         if self.is_last_peer:
             # Last peer decodes a token and sends it back to the first peer.
             # The token is wrapped in an IntermediateRequest.
-            assert isinstance(request, IntermediateRequest), (
-                "Last peer must receive an IntermediateRequest."
-            )
+            assert isinstance(
+                request, IntermediateRequest
+            ), "Last peer must receive an IntermediateRequest."
 
             next_token_id, hidden_states = self._gen_token_id_from_hidden(hidden_states)
             return IntermediateRequest(
@@ -709,9 +709,9 @@ class BaseExecutor:
             return IntermediateRequest.from_initial_request(
                 request, hidden_states=hidden_states, lora_path=request.lora_path
             )
-        assert isinstance(request, IntermediateRequest), (
-            "Intermediate peer must process an IntermediateRequest."
-        )
+        assert isinstance(
+            request, IntermediateRequest
+        ), "Intermediate peer must process an IntermediateRequest."
         return IntermediateRequest.from_intermediate_request(
             request, hidden_states, lora_path=request.lora_path
         )

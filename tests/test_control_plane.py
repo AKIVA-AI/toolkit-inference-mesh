@@ -160,15 +160,15 @@ class TestToolkitToolSpecs:
 
     def test_all_commands_are_full_access(self) -> None:
         for name, cmd_spec in TOOLKIT_TOOL_SPECS.items():
-            assert cmd_spec.spec.permission_scope == PermissionScope.FULL_ACCESS, (
-                f"command '{name}' should be FULL_ACCESS"
-            )
+            assert (
+                cmd_spec.spec.permission_scope == PermissionScope.FULL_ACCESS
+            ), f"command '{name}' should be FULL_ACCESS"
 
     def test_all_commands_require_approval(self) -> None:
         for name, cmd_spec in TOOLKIT_TOOL_SPECS.items():
-            assert cmd_spec.boundary.approval == ApprovalPolicy.REQUIRE_APPROVAL, (
-                f"command '{name}' should require approval"
-            )
+            assert (
+                cmd_spec.boundary.approval == ApprovalPolicy.REQUIRE_APPROVAL
+            ), f"command '{name}' should require approval"
 
     def test_boundary_scope_matches_spec_scope(self) -> None:
         for name, cmd_spec in TOOLKIT_TOOL_SPECS.items():
