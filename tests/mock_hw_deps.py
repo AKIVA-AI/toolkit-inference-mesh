@@ -33,7 +33,15 @@ def install_mocks() -> None:
         return m
 
     # Only mock if real modules are not available
-    if importlib.util.find_spec("mlx") is None:
+    def _spec_missing(name: str) -> bool:
+        if name in sys.modules:
+            return False  # already loaded (real or stub)
+        try:
+            return importlib.util.find_spec(name) is None
+        except (ModuleNotFoundError, ValueError):
+            return True
+
+    if _spec_missing("mlx"):
         mlx_root = _make_mock_module("mlx")
         mlx_core = _make_mock_module("mlx.core")
         mlx_nn = _make_mock_module("mlx.nn")
@@ -48,20 +56,26 @@ def install_mocks() -> None:
         sys.modules["mlx.nn"] = mlx_nn
         sys.modules["mlx.utils"] = mlx_utils
 
-    if importlib.util.find_spec("mlx_lm") is None:
+    if _spec_missing("mlx_lm"):
         mlx_lm = _make_mock_module("mlx_lm")
         mlx_lm_tuner = _make_mock_module("mlx_lm.tuner")
         mlx_lm_tuner_utils = _make_mock_module("mlx_lm.tuner.utils")
+        mlx_lm_utils = _make_mock_module("mlx_lm.utils")
+        mlx_lm_tokenizer_utils = _make_mock_module("mlx_lm.tokenizer_utils")
 
         mlx_lm.tuner = mlx_lm_tuner
         mlx_lm.tuner.utils = mlx_lm_tuner_utils
+        mlx_lm.utils = mlx_lm_utils
+        mlx_lm.tokenizer_utils = mlx_lm_tokenizer_utils
 
         sys.modules["mlx_lm"] = mlx_lm
         sys.modules["mlx_lm.tuner"] = mlx_lm_tuner
         sys.modules["mlx_lm.tuner.utils"] = mlx_lm_tuner_utils
+        sys.modules["mlx_lm.utils"] = mlx_lm_utils
+        sys.modules["mlx_lm.tokenizer_utils"] = mlx_lm_tokenizer_utils
 
     # Ensure torch is available or mocked
-    if importlib.util.find_spec("torch") is None:
+    if _spec_missing("torch"):
         mock_torch = _make_mock_module("torch")
         mock_torch.float32 = "float32"
         mock_torch.float16 = "float16"

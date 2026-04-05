@@ -477,6 +477,12 @@ async def v1_chat_completions(raw_request: fastapi.Request):
             return create_error_response("Internal server error", "InternalServerError")
 
 
+@app.get("/health")
+async def health():
+    """Liveness probe for the peer HTTP server."""
+    return ORJSONResponse(content={"status": "ok"}, status_code=200)
+
+
 @app.post("/v1/chat/completions")
 async def openai_v1_chat_completions(raw_request: fastapi.Request):
     """OpenAI v1/chat/complete post function"""

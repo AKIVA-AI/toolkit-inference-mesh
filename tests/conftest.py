@@ -16,6 +16,7 @@ _NO_HW_DEPS = {
     "test_layer_allocation.py",
     "test_routing_edge_cases.py",
     "test_ascii_utils.py",
+    "test_health_endpoints.py",
 }
 
 

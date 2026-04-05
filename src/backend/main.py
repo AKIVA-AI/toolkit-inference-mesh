@@ -1,5 +1,6 @@
 import asyncio
 import json
+import os
 import time
 import uuid
 from pathlib import Path
@@ -28,17 +29,34 @@ from parallax_utils.file_util import get_project_root
 from parallax_utils.logging_config import get_logger, set_log_level
 from parallax_utils.version_check import check_latest_release
 
+_VERSION = "0.1.2"
+
 app = FastAPI()
+
+_cors_origins_raw = os.environ.get("CORS_ALLOWED_ORIGINS", "").strip()
+_cors_origins = (
+    [o.strip() for o in _cors_origins_raw.split(",") if o.strip()] if _cors_origins_raw else ["*"]
+)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 logger = get_logger(__name__)
+
+# ---------------------------------------------------------------------------
+# Metrics counters (lightweight, no external dependency)
+# ---------------------------------------------------------------------------
+_metrics = {
+    "requests_total": 0,
+    "requests_success": 0,
+    "requests_error": 0,
+    "startup_ts": time.time(),
+}
 
 scheduler_manage = None
 request_handler = RequestHandler()
@@ -53,48 +71,89 @@ async def toolkit_inference_event_middleware(request: Request, call_next):  # ty
         status_code = int(getattr(response, "status_code", 200))
         return response
     finally:
+        _metrics["requests_total"] += 1
+        if 200 <= status_code < 400:
+            _metrics["requests_success"] += 1
+        else:
+            _metrics["requests_error"] += 1
         try:
             # Only emit events for the OpenAI-compatible endpoint (keeps noise down).
-            if request.url.path != "/v1/chat/completions":
-                return
-            if bool(getattr(request.state, "toolkit_event_written", False)):
-                return
+            is_chat = request.url.path == "/v1/chat/completions"
+            already_written = bool(getattr(request.state, "toolkit_event_written", False))
+            if is_chat and not already_written:
+                elapsed_ms = int((time.time() - started) * 1000)
+                model = str(getattr(request.state, "model", "") or "")
+                req_id = str(getattr(request.state, "request_id", "") or "")
+                tier = str(getattr(request.state, "tier", "") or "")
+                tenant = str(getattr(request.state, "tenant", "") or "") or request.headers.get(
+                    "x-tenant", ""
+                )
+                project = str(getattr(request.state, "project", "") or "") or request.headers.get(
+                    "x-project", ""
+                )
 
-            elapsed_ms = int((time.time() - started) * 1000)
-            model = str(getattr(request.state, "model", "") or "")
-            req_id = str(getattr(request.state, "request_id", "") or "")
-            tier = str(getattr(request.state, "tier", "") or "")
-            tenant = str(getattr(request.state, "tenant", "") or "") or request.headers.get(
-                "x-tenant", ""
-            )
-            project = str(getattr(request.state, "project", "") or "") or request.headers.get(
-                "x-project", ""
-            )
-
-            # Cost is unknown at this layer; set to 0.0 until a pricing model is introduced.
-            event = {
-                "schema_version": 1,
-                "created_ts": float(started),
-                "request_id": req_id,
-                "tenant": tenant,
-                "project": project,
-                "tier": tier,
-                "provider": "parallax",
-                "model": model or "unknown",
-                "latency_ms": float(elapsed_ms),
-                "cost_usd": 0.0,
-                "success": bool(200 <= status_code < 400),
-                "error_type": "" if 200 <= status_code < 400 else f"http_{status_code}",
-                "meta": {"path": request.url.path, "status_code": status_code},
-            }
-            append_inference_event(event)
-            try:
-                request.state.toolkit_event_written = True
-            except Exception:
-                pass
+                event = {
+                    "schema_version": 1,
+                    "created_ts": float(started),
+                    "request_id": req_id,
+                    "tenant": tenant,
+                    "project": project,
+                    "tier": tier,
+                    "provider": "parallax",
+                    "model": model or "unknown",
+                    "latency_ms": float(elapsed_ms),
+                    "cost_usd": 0.0,
+                    "success": bool(200 <= status_code < 400),
+                    "error_type": "" if 200 <= status_code < 400 else f"http_{status_code}",
+                    "meta": {"path": request.url.path, "status_code": status_code},
+                }
+                append_inference_event(event)
+                try:
+                    request.state.toolkit_event_written = True
+                except Exception:
+                    pass
         except Exception:
             # Never break serving due to telemetry.
-            return
+            pass
+
+
+@app.get("/health")
+async def health():
+    """Liveness probe — always returns 200 if the process is running."""
+    return JSONResponse(
+        content={"status": "ok", "version": _VERSION},
+        status_code=200,
+    )
+
+
+@app.get("/ready")
+async def ready():
+    """Readiness probe — returns 200 only when the scheduler is available."""
+    if scheduler_manage is not None and scheduler_manage.is_running():
+        return JSONResponse(
+            content={"status": "ready", "version": _VERSION},
+            status_code=200,
+        )
+    return JSONResponse(
+        content={"status": "not_ready", "version": _VERSION},
+        status_code=503,
+    )
+
+
+@app.get("/metrics")
+async def metrics():
+    """Lightweight JSON metrics endpoint (Prometheus-compatible via adapter)."""
+    uptime_s = time.time() - _metrics["startup_ts"]
+    return JSONResponse(
+        content={
+            "requests_total": _metrics["requests_total"],
+            "requests_success": _metrics["requests_success"],
+            "requests_error": _metrics["requests_error"],
+            "uptime_seconds": round(uptime_s, 1),
+            "version": _VERSION,
+        },
+        status_code=200,
+    )
 
 
 @app.get("/model/list")
