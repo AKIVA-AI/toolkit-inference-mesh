@@ -85,13 +85,29 @@ include = ["parallax*", "parallax_utils*", "scheduling*", "backend*"]
 [tool.black]
 line-length = 100
 target-version = ["py311"]
+# The vendored upstream Parallax engine is not re-formatted (kept byte-close to
+# upstream to limit merge divergence); Black/lint gates apply to Akiva-owned code.
+extend-exclude = '''
+/(
+    src/parallax
+)/
+'''
 
 [tool.isort]
 profile = "black"
 
 [tool.ruff]
-ignore = ["E501"]              # line length handled by Black
 line-length = 100
+# Exclude the vendored upstream Parallax engine from linting. Those files are a
+# byte-close copy of upstream (gradient-parallax) and carry ~1.2k pre-existing
+# style violations we intentionally do not churn. Lint the Akiva-owned code
+# (scheduling/, backend/, toolkit additions, tests/) and any new engine edits
+# are covered by tests instead.
+extend-exclude = ["src/parallax"]
+
+[tool.ruff.lint]
+# E501 (line length) handled by Black.
+ignore = ["E501"]
 
 [tool.bandit]
 # B101: assert_used - asserts are intentional for validation

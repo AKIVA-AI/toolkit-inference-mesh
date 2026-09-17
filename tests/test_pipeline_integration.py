@@ -152,9 +152,7 @@ class TestPipelineIntegration:
         sched = _make_scheduler(cache, max_batch_size=4)
 
         # A decode request already in the running set
-        decode_req = Request(
-            request_id="decode-1", status=RequestStatus.DECODING, prompt_len=3
-        )
+        decode_req = Request(request_id="decode-1", status=RequestStatus.DECODING, prompt_len=3)
         decode_req.ready_for_next_step = True
         cache.allocate_request("decode-1", 3)
         sched._running_requests["decode-1"] = decode_req
@@ -202,4 +200,3 @@ class TestPipelineIntegration:
         assert cache.has_request("small")
         # The batch must respect the token budget
         assert sum(r.prompt_len if r.is_prefill else 1 for r in batch) <= 100
-

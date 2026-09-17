@@ -527,7 +527,9 @@ class Scheduler:
                 if req is None:
                     continue
                 with self._state_lock:
-                    path, path_rtt = self.request_router.find_optimal_path(self.nodes, self.num_layers)
+                    path, path_rtt = self.request_router.find_optimal_path(
+                        self.nodes, self.num_layers
+                    )
                     logger.debug(f"Path RTT: {path_rtt}")
                     req.routing_table = path
                     for node_id in path:
