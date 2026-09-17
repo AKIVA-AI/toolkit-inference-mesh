@@ -12,7 +12,6 @@ Scheduling primitives for distributed LLM inference.
 import time
 from dataclasses import dataclass, field
 from math import floor
-from typing import Dict, List, Optional
 
 from parallax_utils.logging_config import get_logger
 from parallax_utils.utils import bytes_per_element, compute_max_batch_size
@@ -52,7 +51,7 @@ class RequestSignal:
 
     request_id: str
     received_ts: float = field(default_factory=time.time)
-    routing_table: Optional[List[str]] = None
+    routing_table: list[str] | None = None
 
 
 class RooflinePerformanceModel:
@@ -95,9 +94,9 @@ class RooflinePerformanceModel:
     def set_sequence_shape(
         self,
         *,
-        batch_size: Optional[int] = None,
-        target_seq_len: Optional[int] = None,
-        source_seq_len: Optional[int] = None,
+        batch_size: int | None = None,
+        target_seq_len: int | None = None,
+        source_seq_len: int | None = None,
     ) -> None:
         """Convenience setter to update any of batch/target/source sequence sizes."""
         if batch_size is not None:
@@ -181,8 +180,8 @@ class Node:
     max_sequence_length: int = 4096
 
     manual_layer_assignment: bool = False
-    start_layer: Optional[int] = None  # inclusive
-    end_layer: Optional[int] = None  # exclusive
+    start_layer: int | None = None  # inclusive
+    end_layer: int | None = None  # exclusive
     current_requests: int = 0
 
     # todo upload is_active
@@ -190,10 +189,10 @@ class Node:
     last_heartbeat: float = 0.0
     # Will be updated by node broadcasting
     # otherwise, use roofline performance model to estimate
-    avg_layer_latency_ms: Optional[float] = None
+    avg_layer_latency_ms: float | None = None
     load_compensator: float = 0.05
 
-    rtt_to_nodes: Optional[Dict[str, float]] = None
+    rtt_to_nodes: dict[str, float] | None = None
 
     _force_max_concurrent_requests: bool = False
 
@@ -301,7 +300,7 @@ class Node:
             )
 
     @property
-    def per_decoder_layer_kv_cache_memory(self) -> Optional[int]:
+    def per_decoder_layer_kv_cache_memory(self) -> int | None:
         """Return the available memory for kv cache per layer."""
         if self.num_current_layers == 0:
             return None

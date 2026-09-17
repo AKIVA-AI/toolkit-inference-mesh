@@ -2,8 +2,6 @@
 Tests for the ShardedModel loader utilities.
 """
 
-from typing import List, Tuple
-
 import mlx.core as mx
 import pytest
 from mlx_lm.models.base import create_attention_mask
@@ -30,7 +28,7 @@ ref_tokenizer = load_tokenizer(model_path, eos_token_ids=ref_config.get("eos_tok
         [(0, 8), (8, 16), (16, TOTAL_LAYERS)],
     ],
 )
-def test_shard_prefill(layers_config: List[Tuple[int, int]]) -> None:
+def test_shard_prefill(layers_config: list[tuple[int, int]]) -> None:
     """Load sharded model based on layers_config and
     compare its forward pass with a full reference model.
     """
@@ -67,7 +65,7 @@ def test_shard_prefill(layers_config: List[Tuple[int, int]]) -> None:
             mask_inner = create_attention_mask(h, cache[0])
         else:
             mask_inner = mask
-        for layer, c in zip(self.layers, cache):
+        for layer, c in zip(self.layers, cache, strict=True):
             h = layer(h, mask_inner, c)
         h = self.model.norm(h)
         if self.args.tie_word_embeddings:

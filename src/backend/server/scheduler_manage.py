@@ -1,6 +1,5 @@
 import threading
 import time
-from typing import List
 
 from lattica import Lattica
 
@@ -26,20 +25,20 @@ class SchedulerManage:
 
     def __init__(
         self,
-        initial_peers: List[str] = [],
-        relay_servers: List[str] = [],
+        initial_peers: list[str] | None = None,
+        relay_servers: list[str] | None = None,
         dht_prefix: str = "gradient",
-        host_maddrs: List[str] = [],
-        announce_maddrs: List[str] = [],
+        host_maddrs: list[str] | None = None,
+        announce_maddrs: list[str] | None = None,
         http_port: int = 3001,
         use_hfcache: bool = False,
     ):
         """Initialize the manager with networking bootstrap parameters."""
-        self.initial_peers = initial_peers
-        self.relay_servers = relay_servers
+        self.initial_peers = initial_peers if initial_peers is not None else []
+        self.relay_servers = relay_servers if relay_servers is not None else []
         self.dht_prefix = dht_prefix
-        self.host_maddrs = host_maddrs
-        self.announce_maddrs = announce_maddrs
+        self.host_maddrs = host_maddrs if host_maddrs is not None else []
+        self.announce_maddrs = announce_maddrs if announce_maddrs is not None else []
         self.http_port = http_port
         self.use_hfcache = use_hfcache
         self.model_name = None

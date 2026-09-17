@@ -8,7 +8,7 @@ import queue
 import threading
 import time
 from collections import deque
-from typing import Deque, Dict, List, Literal, Optional, Tuple
+from typing import Literal
 
 from parallax_utils.logging_config import get_logger
 from scheduling.layer_allocation import (
@@ -31,7 +31,7 @@ class Scheduler:
     def __init__(
         self,
         model_info: ModelInfo,
-        nodes: List[Node],
+        nodes: list[Node],
         min_nodes_bootstrapping: int = 1,
         strategy: Literal["greedy", "dp"] = "dp",
         routing_strategy: Literal["rr", "dp"] = "rr",
@@ -71,7 +71,7 @@ class Scheduler:
         )
         # Ensure Scheduler and allocator share the same node list to avoid divergence.
         self.nodes = self.layer_allocator.nodes
-        self.node_id_to_node: Dict[str, Node] = self.layer_allocator.node_id_to_node
+        self.node_id_to_node: dict[str, Node] = self.layer_allocator.node_id_to_node
         self.min_nodes_bootstrapping = min_nodes_bootstrapping
 
         self.request_router = (
@@ -79,23 +79,25 @@ class Scheduler:
         )
         self.request_warm_up_for_reshard = request_warm_up_for_reshard
 
-        self._request_queue: "queue.Queue[RequestSignal]" = queue.Queue()
+        self._request_queue: queue.Queue[RequestSignal] = queue.Queue()
         self.request_arrival_horizon_sec = request_arrival_horizon_sec
         self.heartbeat_timeout = heartbeat_timeout
-        self._arrival_ts: Deque[float] = deque()
+        self._arrival_ts: deque[float] = deque()
 
         # Event queues for main loop orchestration (thread-safe)
-        self._pending_joins: "queue.Queue[Node]" = queue.Queue()
-        self._pending_leaves: "queue.Queue[str]" = queue.Queue()
-        self._pending_node_updates: "queue.Queue[Tuple[str, Optional[int], Optional[float], Optional[Dict[str, float]], Optional[bool]]]" = (queue.Queue())
+        self._pending_joins: queue.Queue[Node] = queue.Queue()
+        self._pending_leaves: queue.Queue[str] = queue.Queue()
+        self._pending_node_updates: queue.Queue[
+            tuple[str, int | None, float | None, dict[str, float] | None, bool | None]
+        ] = queue.Queue()
 
         # Concurrency controls
         self._stop_event: threading.Event = threading.Event()
         self._wake_event: threading.Event = threading.Event()
         self._node_count_cv: threading.Condition = threading.Condition()
-        self._event_thread: Optional[threading.Thread] = None
-        self._dispatch_thread: Optional[threading.Thread] = None
-        self._alloc_log_thread: Optional[threading.Thread] = None
+        self._event_thread: threading.Thread | None = None
+        self._dispatch_thread: threading.Thread | None = None
+        self._alloc_log_thread: threading.Thread | None = None
         # Guards self.nodes, self.node_id_to_node, and self._node_assigned_request_count
         # across the dispatch loop and join/leave processing threads.
         self._state_lock: threading.RLock = threading.RLock()
@@ -106,7 +108,7 @@ class Scheduler:
             f"Scheduler initialized, min_nodes_bootstrapping {self.min_nodes_bootstrapping}, "
             f"strategy {strategy}, rebalance threshold {rebalance_threshold}"
         )
-        self._node_assigned_request_count: Dict[str, int] = {}
+        self._node_assigned_request_count: dict[str, int] = {}
 
         # Eager bootstrap for initial allocation if enough nodes are present
         try:
@@ -178,7 +180,7 @@ class Scheduler:
         logger.debug(f"{action.capitalize()} completed successfully; full pipeline established")
         return True
 
-    def list_node_allocations(self) -> List[Tuple[str, int, int]]:
+    def list_node_allocations(self) -> list[tuple[str, int, int]]:
         """List the allocations of all nodes."""
         return self.layer_allocator.list_node_allocations()
 
@@ -210,7 +212,7 @@ class Scheduler:
             override_warmup_count if override_warmup_count > 0 else self.request_warm_up_for_reshard
         )
 
-        agg_turns: Dict[Tuple[str, int, str], int] = {}
+        agg_turns: dict[tuple[str, int, str], int] = {}
         for _ in range(warmup_count):
             turns = DynamicProgrammingRouting.find_turning_points(nodes_list, num_layers)
             for t in turns:
@@ -235,10 +237,10 @@ class Scheduler:
         self,
         node: Node,
         *,
-        current_requests: Optional[int] = None,
-        layer_latency_ms: Optional[float] = None,
-        new_rtt_to_nodes: Optional[Dict[str, float]] = None,
-        is_active: Optional[bool] = None,
+        current_requests: int | None = None,
+        layer_latency_ms: float | None = None,
+        new_rtt_to_nodes: dict[str, float] | None = None,
+        is_active: bool | None = None,
     ) -> None:
         """Update the info of a node."""
         if current_requests is not None:
@@ -274,10 +276,10 @@ class Scheduler:
         self,
         node_id: str,
         *,
-        current_requests: Optional[int] = None,
-        layer_latency_ms: Optional[float] = None,
-        new_rtt_to_nodes: Optional[Dict[str, float]] = None,
-        is_active: Optional[bool] = None,
+        current_requests: int | None = None,
+        layer_latency_ms: float | None = None,
+        new_rtt_to_nodes: dict[str, float] | None = None,
+        is_active: bool | None = None,
     ) -> None:
         """Enqueue a node update event."""
         self._pending_node_updates.put(
@@ -400,7 +402,7 @@ class Scheduler:
         while self._arrival_ts and now - self._arrival_ts[0] > horizon:
             self._arrival_ts.popleft()
 
-    def dispatch_next_request(self) -> Optional[Tuple[str, List[str], float]]:
+    def dispatch_next_request(self) -> tuple[str, list[str], float] | None:
         """Route the next request in the wait pool; returns (request_id, path, latency)."""
         try:
             req = self._request_queue.get_nowait()

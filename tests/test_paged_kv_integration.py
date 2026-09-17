@@ -43,7 +43,7 @@ class TestPagedKVIntegration(unittest.TestCase):
         seq_lens = [10, 20]  # Both < block_size * 2 for simplicity
 
         # Allocate blocks
-        for rid, slen in zip(req_ids, seq_lens):
+        for rid, slen in zip(req_ids, seq_lens, strict=True):
             self.cache_manager.allocate_request(rid, slen)
 
         block_tables = []

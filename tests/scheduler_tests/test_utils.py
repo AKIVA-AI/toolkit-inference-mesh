@@ -4,8 +4,8 @@ Reusable test helpers for model/node builders and RTT utilities.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from math import sqrt
-from typing import Dict, Iterable, List, Tuple
 
 from scheduling.model_info import ModelInfo
 from scheduling.node import Node, NodeHardwareInfo
@@ -91,19 +91,19 @@ def build_node(
     )
     n = Node(node_id=node_id, hardware=hw, model_info=model, _force_max_concurrent_requests=True)
     # Attach coordinates for RTT synthesis in tests
-    setattr(n, "_x", float(x))
-    setattr(n, "_y", float(y))
+    n._x = float(x)
+    n._y = float(y)
     # Ensure roofline uses a defined speedup
-    setattr(n, "quantization_speedup", 1.0)
+    n.quantization_speedup = 1.0
     return n
 
 
-def compute_rtts_from_coords(nodes: Iterable[Node]) -> Dict[Tuple[str, str], float]:
+def compute_rtts_from_coords(nodes: Iterable[Node]) -> dict[tuple[str, str], float]:
     """Map Euclidean distances between nodes' (x, y) to RTTs in [10, 200] ms."""
     node_list = list(nodes)
     if not node_list:
         return {}
-    coords: Dict[str, Tuple[float, float]] = {
+    coords: dict[str, tuple[float, float]] = {
         n.node_id: (
             float(getattr(n, "_x", 0.0)),
             float(getattr(n, "_y", 0.0)),
@@ -123,7 +123,7 @@ def compute_rtts_from_coords(nodes: Iterable[Node]) -> Dict[Tuple[str, str], flo
     def to_latency(d: float) -> float:
         return 10.0 if max_dist <= 0 else 10.0 + 190.0 * (d / max_dist)
 
-    rtts: Dict[Tuple[str, str], float] = {(nid, nid): 10.0 for nid in ids}
+    rtts: dict[tuple[str, str], float] = {(nid, nid): 10.0 for nid in ids}
     for i, aid in enumerate(ids):
         ax, ay = coords[aid]
         for bid in ids[i + 1 :]:
@@ -135,7 +135,7 @@ def compute_rtts_from_coords(nodes: Iterable[Node]) -> Dict[Tuple[str, str], flo
     return rtts
 
 
-def set_rtt_from_coords(nodes: List[Node]) -> None:
+def set_rtt_from_coords(nodes: list[Node]) -> None:
     """Populate `rtt_to_nodes` on each node based on their coordinates."""
     all_rtts = compute_rtts_from_coords(nodes)
     node_map = {n.node_id: n for n in nodes}
@@ -153,7 +153,7 @@ def set_rtt_from_coords(nodes: List[Node]) -> None:
                 node_a.rtt_to_nodes[bid] = rtt
 
 
-def geo_rtt_provider(positions: Dict[str, Tuple[float, float]]):
+def geo_rtt_provider(positions: dict[str, tuple[float, float]]):
     """Create an RTT provider mapping Euclidean distance to [10, 200] ms.
 
     Scales by the maximum pairwise distance among provided positions.

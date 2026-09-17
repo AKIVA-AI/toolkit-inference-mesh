@@ -5,7 +5,7 @@ from __future__ import annotations
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -45,7 +45,7 @@ class TestSharedStateDictInterface:
     """Tests for dict-like access on SharedState."""
 
     def setup_method(self):
-        self.d: Dict[str, Any] = {}
+        self.d: dict[str, Any] = {}
         self.state = SharedState(manager_dict=self.d)
 
     def test_get_existing_key(self):
@@ -87,7 +87,7 @@ class TestSharedStateMetrics:
 
     def setup_method(self):
         metrics_dict = {"current_requests": 0, "layer_latency_ms": None, "_last_update_ts": 0.0}
-        self.d: Dict[str, Any] = {"metrics": metrics_dict}
+        self.d: dict[str, Any] = {"metrics": metrics_dict}
         self.state = SharedState(manager_dict=self.d)
 
     def test_get_metrics_returns_copy(self):
@@ -130,7 +130,7 @@ class TestSharedStateModelInfo:
     """Tests for model info and status methods."""
 
     def setup_method(self):
-        self.d: Dict[str, Any] = {
+        self.d: dict[str, Any] = {
             "model_name": "llama-7b",
             "block_start_index": 0,
             "block_end_index": 16,

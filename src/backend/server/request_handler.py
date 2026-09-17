@@ -1,6 +1,5 @@
 import json
 import time
-from typing import Dict
 
 import aiohttp
 from fastapi import Request
@@ -43,7 +42,7 @@ class RequestHandler:
 
     async def _forward_request(
         self,
-        request_data: Dict,
+        request_data: dict,
         request_id: str,
         received_ts: int,
         request: Request | None = None,
@@ -295,6 +294,6 @@ class RequestHandler:
             )
 
     async def v1_chat_completions(
-        self, request_data: Dict, request_id: str, received_ts: int, request: Request | None = None
+        self, request_data: dict, request_id: str, received_ts: int, request: Request | None = None
     ):
         return await self._forward_request(request_data, request_id, received_ts, request)

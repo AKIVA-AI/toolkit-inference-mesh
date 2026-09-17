@@ -6,9 +6,9 @@ complete — verifying end-to-end behavior without hardware dependencies.
 
 from __future__ import annotations
 
+import importlib.util
 import sys
 import types
-import importlib.util
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))

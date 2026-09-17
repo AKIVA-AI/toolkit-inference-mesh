@@ -85,11 +85,14 @@ include = ["parallax*", "parallax_utils*", "scheduling*", "backend*"]
 [tool.black]
 line-length = 100
 target-version = ["py311"]
-# The vendored upstream Parallax engine is not re-formatted (kept byte-close to
-# upstream to limit merge divergence); Black/lint gates apply to Akiva-owned code.
+# The vendored upstream Parallax engine and benchmark/utility trees are not
+# re-formatted (kept byte-close to upstream to limit merge divergence);
+# Black/lint gates apply to Akiva-owned code.
 extend-exclude = '''
 /(
     src/parallax
+  | src/backend/benchmark
+  | src/parallax_utils
 )/
 '''
 
@@ -98,16 +101,26 @@ profile = "black"
 
 [tool.ruff]
 line-length = 100
-# Exclude the vendored upstream Parallax engine from linting. Those files are a
-# byte-close copy of upstream (gradient-parallax) and carry ~1.2k pre-existing
-# style violations we intentionally do not churn. Lint the Akiva-owned code
-# (scheduling/, backend/, toolkit additions, tests/) and any new engine edits
-# are covered by tests instead.
-extend-exclude = ["src/parallax"]
+target-version = "py311"
+# Exclude the vendored upstream trees from linting. Those files are a byte-close
+# copy of upstream gradient-parallax and its benchmarks/utils, and carry
+# pre-existing style/legacy-typing debt we intentionally do not churn. Lint the
+# Akiva-owned code (scheduling/, backend/server, toolkit additions, tests/).
+extend-exclude = ["src/parallax", "src/backend/benchmark", "src/parallax_utils"]
 
 [tool.ruff.lint]
-# E501 (line length) handled by Black.
+# Pin the intended rule set explicitly so a newer ruff in CI does not silently
+# expand its default selection and break the gate on unrelated style debt.
+# Enabled rules target real correctness: F (pyflakes/bugs), B (bugbear), and
+# UP (pyupgrade) for owned code. E501 line length is handled by Black.
+# Naming (N) and per-file cosmetic rules are relaxed for tests, where
+# UPPER_SNAKE dims and short helpers are idiomatic.
+select = ["E", "F", "W", "B", "I", "UP"]
 ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests: allow descriptive UPPER_SNAKE tensor dims and short helper names.
+"tests/**" = ["N802", "N803", "N806"]
 
 [tool.bandit]
 # B101: assert_used - asserts are intentional for validation

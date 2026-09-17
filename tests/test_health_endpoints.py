@@ -104,8 +104,8 @@ if starlette_ds is not None and isinstance(starlette_ds, MagicMock):
 # ---------------------------------------------------------------------------
 # 3. Now import the backend app
 # ---------------------------------------------------------------------------
-from backend.main import _VERSION, _cors_origins, _metrics, app  # noqa: E402
 import backend.main as bm  # noqa: E402
+from backend.main import _VERSION, _cors_origins, _metrics, app  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Tests

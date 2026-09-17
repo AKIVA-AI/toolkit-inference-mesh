@@ -25,7 +25,7 @@ def _iter_blocking_stream(producer):
     queue, preserving streaming yield order. `producer` must call
     `enqueue(bytes)` per chunk. Exceptions inside producer are re-raised here.
     """
-    q: "queue.Queue" = queue.Queue()
+    q: queue.Queue = queue.Queue()
 
     def _run():
         try:

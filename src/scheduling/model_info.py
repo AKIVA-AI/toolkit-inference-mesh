@@ -8,7 +8,6 @@ and performance estimation decisions.
 """
 
 from dataclasses import dataclass
-from typing import Optional
 
 from parallax_utils.logging_config import get_logger
 
@@ -32,9 +31,9 @@ class ModelInfo:
     vocab_size: int
     num_layers: int
     ffn_num_projections: int = 3
-    num_local_experts: Optional[int] = None
-    num_experts_per_tok: Optional[int] = None
-    moe_intermediate_dim: Optional[int] = None
+    num_local_experts: int | None = None
+    num_experts_per_tok: int | None = None
+    moe_intermediate_dim: int | None = None
     tie_embedding: bool = False
     # Default int8
     param_bytes_per_element: float = 1
@@ -42,8 +41,8 @@ class ModelInfo:
     cache_bytes_per_element: int = 1
     embedding_bytes_per_element: int = 1
 
-    qk_nope_head_dim: Optional[int] = None
-    qk_rope_head_dim: Optional[int] = None
+    qk_nope_head_dim: int | None = None
+    qk_rope_head_dim: int | None = None
     head_size_k: int = None
     head_size_v: int = None
 
@@ -92,7 +91,7 @@ class ModelInfo:
 
     def expected_num_activated_experts(
         self, *, batch_size: int = 1, target_seq_len: int = 1
-    ) -> Optional[int]:
+    ) -> int | None:
         """Return expected number of activated experts for a request size."""
         num_tokens = batch_size * target_seq_len
         if self.num_local_experts is not None and self.num_experts_per_tok is not None:
@@ -143,7 +142,7 @@ class ModelInfo:
 
     def decoder_layer_io_bytes(
         self,
-        roofline: Optional[bool] = None,
+        roofline: bool | None = None,
         *,
         batch_size: int = 1,
         target_seq_len: int = 1,

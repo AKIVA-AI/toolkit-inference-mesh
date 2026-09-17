@@ -13,7 +13,6 @@ final node path and total latency.
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional, Tuple
 
 from parallax_utils.logging_config import get_logger
 from scheduling.node import Node
@@ -25,7 +24,7 @@ class RequestRoutingStrategy(ABC):
     """Base abstract class for request routing strategies."""
 
     @abstractmethod
-    def find_turning_points(self, nodes: List[Node], num_layers: int) -> List[Tuple[str, int, str]]:
+    def find_turning_points(self, nodes: list[Node], num_layers: int) -> list[tuple[str, int, str]]:
         """Find truncation points.
 
         Turning points mark where shards can be trimmed based on optimal routing.
@@ -37,7 +36,7 @@ class RequestRoutingStrategy(ABC):
         """
 
     @abstractmethod
-    def find_optimal_path(self, nodes: List[Node], num_layers: int) -> Tuple[List[str], float]:
+    def find_optimal_path(self, nodes: list[Node], num_layers: int) -> tuple[list[str], float]:
         """Shard-level DP path across nodes. Returns (node_ids, latency)."""
 
 
@@ -53,7 +52,7 @@ class DynamicProgrammingRouting(RequestRoutingStrategy):
     """
 
     @staticmethod
-    def find_turning_points(nodes: List[Node], num_layers: int) -> List[Tuple[str, int, str]]:
+    def find_turning_points(nodes: list[Node], num_layers: int) -> list[tuple[str, int, str]]:
         """Find shard truncation points via layer-level DP.
 
         DP state is (layer l, node i that hosts l). Node cost uses the node's
@@ -68,7 +67,7 @@ class DynamicProgrammingRouting(RequestRoutingStrategy):
             return []
 
         # Build host lists per layer using start/end layer ranges
-        layer_hosts: List[List[int]] = []
+        layer_hosts: list[list[int]] = []
         for li in range(num_layers):
             hosts = [i for i, n in enumerate(nodes) if n.hosts_layer(li)]
             layer_hosts.append(hosts)
@@ -78,8 +77,8 @@ class DynamicProgrammingRouting(RequestRoutingStrategy):
             return []
 
         # layer_id: node_id -> cost
-        dp: List[Dict[int, float]] = [{i: float("inf") for i in layer_hosts[0]}]
-        back: List[Dict[int, Optional[int]]] = [{i: None for i in layer_hosts[0]}]
+        dp: list[dict[int, float]] = [{i: float("inf") for i in layer_hosts[0]}]
+        back: list[dict[int, int | None]] = [{i: None for i in layer_hosts[0]}]
 
         # Init layer 0
         for i in layer_hosts[0]:
@@ -87,12 +86,12 @@ class DynamicProgrammingRouting(RequestRoutingStrategy):
 
         # Recurrrence: dp[li+1][g] = min_g' (dp[li][g] + rtt(g,g') + latency(g'))
         for li in range(1, num_layers):
-            curr: Dict[int, float] = {i: float("inf") for i in layer_hosts[li]}
-            prev_back: Dict[int, Optional[int]] = {i: None for i in layer_hosts[li]}
+            curr: dict[int, float] = {i: float("inf") for i in layer_hosts[li]}
+            prev_back: dict[int, int | None] = {i: None for i in layer_hosts[li]}
             for i in layer_hosts[li]:
                 node_i = nodes[i]
                 best_cost = float("inf")
-                best_j: Optional[int] = None
+                best_j: int | None = None
                 for j, prev_cost in dp[li - 1].items():
                     if prev_cost == float("inf"):
                         continue
@@ -110,7 +109,7 @@ class DynamicProgrammingRouting(RequestRoutingStrategy):
         # Backtrack optimal node index per layer
         last = dp[-1]
         end_i = min(last, key=lambda k: last[k])
-        path_idx: List[int] = [end_i]
+        path_idx: list[int] = [end_i]
         for li in range(num_layers - 1, 0, -1):
             prev_i = back[li][path_idx[-1]]
             if prev_i is None:
@@ -119,7 +118,7 @@ class DynamicProgrammingRouting(RequestRoutingStrategy):
         path_idx.reverse()
 
         # Identify turning points: tail truncations when switching away
-        turning: List[Tuple[str, int, str]] = []
+        turning: list[tuple[str, int, str]] = []
         for li in range(1, len(path_idx)):
             prev_i = path_idx[li - 1]
             cur_i = path_idx[li]
@@ -131,7 +130,7 @@ class DynamicProgrammingRouting(RequestRoutingStrategy):
         # Identify front truncations: for each node on the path, if the first
         # layer used is greater than its hosted start, we can drop the prefix
         # [start, first_used_layer)
-        first_used: Dict[int, int] = {}
+        first_used: dict[int, int] = {}
         for li, idx in enumerate(path_idx):
             if idx not in first_used:
                 first_used[idx] = li
@@ -143,14 +142,14 @@ class DynamicProgrammingRouting(RequestRoutingStrategy):
                 turning.append((n.node_id, first_layer, "head"))
         return turning
 
-    def find_optimal_path(self, nodes: List[Node], num_layers: int) -> Tuple[List[str], float]:
+    def find_optimal_path(self, nodes: list[Node], num_layers: int) -> tuple[list[str], float]:
         """Shard-level DP path across node ranges using `Node` APIs."""
         if num_layers <= 0 or not nodes:
             return [], 0.0
 
         # Collect vertices from nodes with valid layer ranges
-        starts: Dict[int, List[int]] = {}
-        ends: Dict[int, List[int]] = {}
+        starts: dict[int, list[int]] = {}
+        ends: dict[int, list[int]] = {}
         for idx, n in enumerate(nodes):
             if n.start_layer is None or n.end_layer is None or n.is_active is False:
                 continue
@@ -170,8 +169,8 @@ class DynamicProgrammingRouting(RequestRoutingStrategy):
             )
         ]
 
-        dp: Dict[int, float] = {i: float("inf") for i in order}
-        parent: Dict[int, Optional[int]] = {i: None for i in order}
+        dp: dict[int, float] = {i: float("inf") for i in order}
+        parent: dict[int, int | None] = {i: None for i in order}
 
         # Initialize with nodes starting at layer 0
         for i in starts.get(0, []):
@@ -205,8 +204,8 @@ class DynamicProgrammingRouting(RequestRoutingStrategy):
             return [], float("inf")
 
         # Reconstruct path
-        path_indices: List[int] = []
-        cur: Optional[int] = end_idx
+        path_indices: list[int] = []
+        cur: int | None = end_idx
         while cur is not None:
             path_indices.append(cur)
             cur = parent[cur]
@@ -231,9 +230,9 @@ class RoundRobinPipelineRouting(RequestRoutingStrategy):
 
     def __init__(self) -> None:
         self._rr_cursor: int = 0
-        self._pipelines: Optional[List[List[str]]] = None
+        self._pipelines: list[list[str]] | None = None
 
-    def pipeline_discovery(self, nodes: List[Node], num_layers: int) -> List[List[str]]:
+    def pipeline_discovery(self, nodes: list[Node], num_layers: int) -> list[list[str]]:
         """Discover and return all complete pipelines via DFS backtracking.
 
         Robust enumeration procedure:
@@ -254,16 +253,16 @@ class RoundRobinPipelineRouting(RequestRoutingStrategy):
             return []
 
         # Index nodes by start layer
-        start_to_nodes: Dict[int, List[Node]] = {}
+        start_to_nodes: dict[int, list[Node]] = {}
         for n in nodes:
             if n.start_layer is None or n.end_layer is None:
                 continue
             start_to_nodes.setdefault(n.start_layer, []).append(n)
 
         heads = start_to_nodes.get(0, [])
-        pipelines: List[List[str]] = []
+        pipelines: list[list[str]] = []
 
-        def dfs(current_end: Optional[int], path_ids: List[str]) -> None:
+        def dfs(current_end: int | None, path_ids: list[str]) -> None:
             if current_end is None:
                 return
             if current_end == num_layers:
@@ -284,28 +283,28 @@ class RoundRobinPipelineRouting(RequestRoutingStrategy):
         for head in heads:
             if head.end_layer is None:
                 continue
-            path_ids: List[str] = [head.node_id]
+            path_ids: list[str] = [head.node_id]
             dfs(int(head.end_layer), path_ids)  # type: ignore[arg-type]
 
         logger.debug(f"Discovered {len(pipelines)} pipelines")
         logger.debug(f"Pipelines: {pipelines}")
         return pipelines
 
-    def find_turning_points(self, nodes: List[Node], num_layers: int) -> List[Tuple[str, int, str]]:
+    def find_turning_points(self, nodes: list[Node], num_layers: int) -> list[tuple[str, int, str]]:
         """No warm-up/truncation in the baseline; return no turning points."""
         return []
 
-    def _ensure_pipelines(self, nodes: List[Node], num_layers: int) -> None:
+    def _ensure_pipelines(self, nodes: list[Node], num_layers: int) -> None:
         """Ensure cached pipelines exist; discover and cache if missing."""
         if self._pipelines is None:
             self._pipelines = self.pipeline_discovery(nodes, num_layers)
 
-    def _build_start_index(self, nodes: List[Node]) -> Dict[int, List[Node]]:
+    def _build_start_index(self, nodes: list[Node]) -> dict[int, list[Node]]:
         """Build an index of nodes by their `start_layer` for fast lookups.
 
         Only nodes with both `start_layer` and `end_layer` set are included.
         """
-        index: Dict[int, List[Node]] = {}
+        index: dict[int, list[Node]] = {}
         for n in nodes:
             if n.start_layer is None or n.end_layer is None:
                 continue
@@ -313,8 +312,8 @@ class RoundRobinPipelineRouting(RequestRoutingStrategy):
         return index
 
     def _attempt_repair_pipeline(
-        self, candidate_ids: List[str], nodes: List[Node], num_layers: int
-    ) -> Optional[List[str]]:
+        self, candidate_ids: list[str], nodes: list[Node], num_layers: int
+    ) -> list[str] | None:
         """Best-effort repair of an overloaded pipeline by backtracking from the tail.
 
         Starting from the end of the proposed pipeline, keep the longest viable
@@ -326,7 +325,7 @@ class RoundRobinPipelineRouting(RequestRoutingStrategy):
         Returns:
             A repaired pipeline (list of node_ids) or None if not found.
         """
-        id_to_node: Dict[str, Node] = {n.node_id: n for n in nodes}
+        id_to_node: dict[str, Node] = {n.node_id: n for n in nodes}
         start_to_nodes = self._build_start_index(nodes)
 
         # Identify which positions in the original pipeline are viable
@@ -355,9 +354,9 @@ class RoundRobinPipelineRouting(RequestRoutingStrategy):
                 split_layer = int(prev_node.end_layer)
 
             # Depth-first search to build a non-overloaded suffix covering [split_layer, L)
-            repaired_suffix: Optional[List[str]] = None
+            repaired_suffix: list[str] | None = None
 
-            def dfs(layer: int, acc: List[str]) -> bool:
+            def dfs(layer: int, acc: list[str]) -> bool:
                 nonlocal repaired_suffix
                 if layer == num_layers:
                     repaired_suffix = list(acc)
@@ -384,7 +383,7 @@ class RoundRobinPipelineRouting(RequestRoutingStrategy):
 
         return None
 
-    def find_optimal_path(self, nodes: List[Node], num_layers: int) -> Tuple[List[str], float]:
+    def find_optimal_path(self, nodes: list[Node], num_layers: int) -> tuple[list[str], float]:
         """Round-robin among cached pipelines, skipping overloaded ones.
 
         Selection procedure:
@@ -405,7 +404,7 @@ class RoundRobinPipelineRouting(RequestRoutingStrategy):
         if not self._pipelines:
             return [], float("inf")
 
-        id_to_node: Dict[str, Node] = {n.node_id: n for n in nodes}
+        id_to_node: dict[str, Node] = {n.node_id: n for n in nodes}
 
         attempts = 0
         total_pipelines = len(self._pipelines)
@@ -415,7 +414,7 @@ class RoundRobinPipelineRouting(RequestRoutingStrategy):
             candidate_ids = self._pipelines[idx]
             # Check overloaded / presence
             viable = True
-            prev: Optional[Node] = None
+            prev: Node | None = None
             total_latency = 0.0
             for nid in candidate_ids:
                 node = id_to_node.get(nid)
