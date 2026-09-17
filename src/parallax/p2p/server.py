@@ -11,6 +11,7 @@ import dataclasses
 import enum
 import json
 import multiprocessing
+import queue
 import threading
 import time
 from typing import List, Optional
@@ -27,6 +28,39 @@ from parallax.server.server_info import detect_node_hardware
 from parallax.utils.shared_state import SharedState
 from parallax.utils.utils import get_zmq_socket
 from parallax_utils.logging_config import get_logger, set_log_level
+
+# Sentinel used to terminate the chunk queue in _iter_blocking_stream.
+_STREAM_DONE = object()
+_STREAM_ERROR = object()
+
+
+def _iter_blocking_stream(producer):
+    """Yield chunks produced by a blocking `producer(enqueue)` callable.
+
+    The blocking httpx work runs in a daemon worker thread so it does not block
+    the event loop; chunks are bridged back to the caller through a thread-safe
+    queue, preserving streaming yield order. `producer` must call
+    `enqueue(bytes)` per chunk. Exceptions inside producer are re-raised here.
+    """
+    q: "queue.Queue" = queue.Queue()
+
+    def _run():
+        try:
+            producer(q.put)
+        except Exception as exc:  # bridge the error to the consumer
+            q.put((_STREAM_ERROR, exc))
+        finally:
+            q.put((_STREAM_DONE, None))
+
+    t = threading.Thread(target=_run, daemon=True)
+    t.start()
+    while True:
+        kind, payload = q.get()
+        if kind is _STREAM_DONE:
+            break
+        if kind is _STREAM_ERROR:
+            raise payload
+        yield payload
 
 logger = get_logger(__name__)
 
@@ -164,7 +198,8 @@ class TransformerConnectionHandler(ConnectionHandler):
     ):
         """Handle chat completion request"""
         logger.debug(f"Chat completion request: {request}, type: {type(request)}")
-        try:
+
+        def _produce(enqueue):
             with httpx.Client(timeout=10 * 60, proxy=None, trust_env=False) as client:
                 if request.get("stream", False):
                     with client.stream(
@@ -174,12 +209,15 @@ class TransformerConnectionHandler(ConnectionHandler):
                     ) as response:
                         for chunk in response.iter_bytes():
                             if chunk:
-                                yield chunk
+                                enqueue(chunk)
                 else:
                     response = client.post(
                         f"http://localhost:{self.http_port}/v1/chat/completions", json=request
                     ).json()
-                    yield json.dumps(response).encode()
+                    enqueue(json.dumps(response).encode())
+
+        try:
+            yield from _iter_blocking_stream(_produce)
         except Exception as e:
             logger.exception(f"Error in chat completion: {e}")
             yield b"internal server error"
@@ -196,17 +234,17 @@ class GradientServer:
         self,
         recv_from_peer_addr: str,
         send_to_peer_addr: str,
-        initial_peers: List[str] = [],
+        initial_peers: Optional[List[str]] = None,
         scheduler_addr: Optional[str] = None,
-        relay_servers: List[str] = [],
+        relay_servers: Optional[List[str]] = None,
         block_start_index: int = 0,
         block_end_index: int = 1,
         hidden_layers: int = 128,
         tp_size: int = 1,
         dht_prefix: str = "gradient",
-        host_maddrs: List[str] = [],
+        host_maddrs: Optional[List[str]] = None,
         http_port: Optional[int] = None,
-        announce_maddrs: List[str] = [],
+        announce_maddrs: Optional[List[str]] = None,
         notify_url: str = None,
         model_name: Optional[str] = None,
         max_batch_size: Optional[int] = None,
@@ -216,16 +254,16 @@ class GradientServer:
     ):
         self.recv_from_peer_addr = recv_from_peer_addr
         self.send_to_peer_addr = send_to_peer_addr
-        self.initial_peers = initial_peers
+        self.initial_peers = initial_peers if initial_peers is not None else []
         self.scheduler_addr = scheduler_addr
-        self.relay_servers = relay_servers
+        self.relay_servers = relay_servers if relay_servers is not None else []
         self.block_start_index = block_start_index
         self.block_end_index = block_end_index
         self.hidden_layers = hidden_layers
         self.tp_size = tp_size
         self.dht_prefix = dht_prefix
-        self.host_maddrs = host_maddrs
-        self.announce_maddrs = announce_maddrs
+        self.host_maddrs = host_maddrs if host_maddrs is not None else []
+        self.announce_maddrs = announce_maddrs if announce_maddrs is not None else []
         self.http_port = http_port
         self.notify_url = notify_url
         self.model_name = model_name
@@ -335,18 +373,37 @@ class GradientServer:
             exit(1)
 
         if self.scheduler_addr is not None:  # central scheduler mode
-            try:
-                self.scheduler_stub = RPCConnectionHandler(self.lattica, None, None).get_stub(
-                    self.scheduler_peer_id
-                )
-                node_info = self.get_node_info()
-                if node_info == {}:
-                    logger.error("Failed to get node info, try again after 10 seconds")
-                    self.lattica.close()
-                    self.lattica = None
-                    time.sleep(10)
-                    return self.run()
+            max_retries = 10
+            for attempt in range(max_retries):
+                try:
+                    self.scheduler_stub = RPCConnectionHandler(self.lattica, None, None).get_stub(
+                        self.scheduler_peer_id
+                    )
+                    node_info = self.get_node_info()
+                    if node_info == {}:
+                        logger.error(
+                            f"Failed to get node info (attempt {attempt + 1}/{max_retries}), retry after 10 seconds"
+                        )
+                        self.lattica.close()
+                        self.lattica = None
+                        time.sleep(10)
+                        if attempt < max_retries - 1:
+                            if self.build_lattica():
+                                logger.info("Lattica rebuilt successfully")
+                            else:
+                                logger.error("Failed to rebuild lattica")
+                                exit(1)
+                            continue
+                        logger.error("Failed to get node info after retries")
+                        exit(1)
+                    break
+                except SystemExit:
+                    raise
+                except Exception as e:
+                    logger.exception(f"Error building lattica during join: {e}")
+                    exit(1)
 
+            try:
                 if self.manual_layer_assignment:
                     node_info["manual_layer_assignment"] = True
 
@@ -495,7 +552,7 @@ class GradientServer:
                             ), "Request routing table is not set for non-head rank"
 
                             req.routing_table.extend(self.routing_table)
-                            logger.info(
+                            logger.debug(
                                 f"Set routing table {self.routing_table} for request {req.rid}"
                             )
 
@@ -509,7 +566,7 @@ class GradientServer:
                     for next_peer_id, requests in grouped_requests.items():
                         stub = self.get_stub(next_peer_id)
                         start = time.time()
-                        logger.info(f"Start forwarding data to {next_peer_id}")
+                        logger.debug(f"Start forwarding data to {next_peer_id}")
                         new_forward_request = forward_pb2.ForwardRequest()
                         new_forward_request.forward_mode = forward_request.forward_mode
                         new_forward_request.reqs.extend(requests)
@@ -523,7 +580,7 @@ class GradientServer:
                             "completed",
                         )
 
-                        logger.info(
+                        logger.debug(
                             f"Forwarding data to {next_peer_id}, "
                             f"total size: {len(message_body) / (1024 * 1024):.3f} MB, "
                             f"cost time: {(time.time() - start) * 1000:.3f} ms, "
@@ -545,7 +602,7 @@ class GradientServer:
                             ), "Request routing table is not set for non-head rank"
 
                             req.routing_table.extend(self.routing_table)
-                            logger.info(
+                            logger.debug(
                                 f"Set routing table {self.routing_table} for request {req.rid}"
                             )
 
@@ -561,7 +618,7 @@ class GradientServer:
                     for peer_id, requests in grouped_requests.items():
                         if peer_id != self.lattica.peer_id():
                             stub = self.get_stub(peer_id)
-                            logger.info(
+                            logger.debug(
                                 f"Send abort request: {[r.rid for r in requests]} to: {peer_id}"
                             )
                             new_abort_request = forward_pb2.AbortRequest()

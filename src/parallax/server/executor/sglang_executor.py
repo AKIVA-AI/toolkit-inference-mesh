@@ -160,7 +160,8 @@ class SGLExecutor(BaseExecutor):
         self.tp_cpu_group = self.tp_group.cpu_group
 
     def check_lora_server_args(self):
-        assert self.max_loras_per_batch > 0, "max_loras_per_batch must be positive"
+        if self.max_loras_per_batch <= 0:
+            raise ValueError("max_loras_per_batch must be positive")
 
         # Enable LoRA if any LoRA paths are provided for backward compatibility.
         if self.lora_paths:
@@ -187,9 +188,11 @@ class SGLExecutor(BaseExecutor):
                                 lora_name=lora_path, lora_path=lora_path, pinned=False
                             )
                     elif isinstance(lora_path, dict):
-                        assert (
-                            "lora_name" in lora_path and "lora_path" in lora_path
-                        ), f"When providing LoRA paths as a list of dict, each dict should contain 'lora_name' and 'lora_path' keys. Got: {lora_path}"
+                        if not ("lora_name" in lora_path and "lora_path" in lora_path):
+                            raise ValueError(
+                                "When providing LoRA paths as a list of dict, each dict should "
+                                f"contain 'lora_name' and 'lora_path' keys. Got: {lora_path}"
+                            )
                         lora_ref = LoRARef(
                             lora_name=lora_path["lora_name"],
                             lora_path=lora_path["lora_path"],
@@ -218,32 +221,38 @@ class SGLExecutor(BaseExecutor):
             if self.lora_target_modules:
                 self.lora_target_modules = set(self.lora_target_modules)
                 if "all" in self.lora_target_modules:
-                    assert (
-                        len(self.lora_target_modules) == 1
-                    ), "If 'all' is specified in --lora-target-modules, it should be the only module specified."
+                    if len(self.lora_target_modules) != 1:
+                        raise ValueError(
+                            "If 'all' is specified in --lora-target-modules, it should be the only module specified."
+                        )
                     self.lora_target_modules = set(SUPPORTED_LORA_TARGET_MODULES)
 
             # Ensure sufficient information is provided for LoRA initialization.
-            assert self.lora_paths or (
-                self.max_lora_rank and self.lora_target_modules
-            ), "When no initial --lora-paths is provided, you need to specify both --max-lora-rank and --lora-target-modules for LoRA initialization."
+            if not (self.lora_paths or (self.max_lora_rank and self.lora_target_modules)):
+                raise ValueError(
+                    "When no initial --lora-paths is provided, you need to specify both "
+                    "--max-lora-rank and --lora-target-modules for LoRA initialization."
+                )
 
             # Validate max_loaded_loras
             if self.max_loaded_loras is not None:
-                assert self.max_loaded_loras >= self.max_loras_per_batch, (
-                    "max_loaded_loras should be greater than or equal to max_loras_per_batch. "
-                    f"max_loaded_loras={self.max_loaded_loras}, max_loras_per_batch={self.max_loras_per_batch}"
-                )
-                assert len(self.lora_paths) <= self.max_loaded_loras, (
-                    "The number of LoRA paths should not exceed max_loaded_loras. "
-                    f"max_loaded_loras={self.max_loaded_loras}, lora_paths={len(self.lora_paths)}"
-                )
+                if self.max_loaded_loras < self.max_loras_per_batch:
+                    raise ValueError(
+                        "max_loaded_loras should be greater than or equal to max_loras_per_batch. "
+                        f"max_loaded_loras={self.max_loaded_loras}, max_loras_per_batch={self.max_loras_per_batch}"
+                    )
+                if len(self.lora_paths) > self.max_loaded_loras:
+                    raise ValueError(
+                        "The number of LoRA paths should not exceed max_loaded_loras. "
+                        f"max_loaded_loras={self.max_loaded_loras}, lora_paths={len(self.lora_paths)}"
+                    )
 
             if self.max_lora_chunk_size is not None:
-                assert (
+                if not (
                     16 <= self.max_lora_chunk_size <= 128
                     and (self.max_lora_chunk_size & (self.max_lora_chunk_size - 1)) == 0
-                ), "--max-lora-chunk-size must be a power of 2 between 16 and 128."
+                ):
+                    raise ValueError("--max-lora-chunk-size must be a power of 2 between 16 and 128.")
 
     def handle_input_requests(self, requests: List[Request]):
         """Update requests states and status in scheduler and cache manager."""
@@ -270,7 +279,10 @@ class SGLExecutor(BaseExecutor):
                         )
                         continue
 
-                    assert req.next_token_id is not None
+                    if req.next_token_id is None:
+                        raise RuntimeError(
+                            f"IntermediateRequest {req.request_id} arrived without next_token_id"
+                        )
                     original_req.commit_new_token(req.next_token_id)
                     logger.debug(
                         f"[FirstPeer-CUDA] Committed token {req.next_token_id} for {req.request_id}, "
@@ -306,9 +318,10 @@ class SGLExecutor(BaseExecutor):
         else:
             # Intermediate and Last peers receive IntermediateRequests from the previous peer.
             for req in requests:
-                assert isinstance(
-                    req, IntermediateRequest
-                ), "Non-first peers must receive IntermediateRequests."
+                if not isinstance(req, IntermediateRequest):
+                    raise TypeError(
+                        f"Non-first peers must receive IntermediateRequests, got {type(req)}."
+                    )
                 if req.is_finished or req.hidden_states is None:
                     self.release_and_evict_request(req.request_id)
                     if not self.is_last_peer:
@@ -319,10 +332,10 @@ class SGLExecutor(BaseExecutor):
 
     def process_batch(self, prepared_inputs: Dict[str, Any], return_decoded_tokens: bool = True):
         """Process a batch of requests in SGLang."""
-        assert "forward_batch" in prepared_inputs, "forward_batch should be in cuda prepared inputs"
-        assert (
-            "pp_proxy_tensors" in prepared_inputs
-        ), "pp_proxy_tensors should be in cuda prepared inputs"
+        if "forward_batch" not in prepared_inputs:
+            raise RuntimeError("forward_batch should be in cuda prepared inputs")
+        if "pp_proxy_tensors" not in prepared_inputs:
+            raise RuntimeError("pp_proxy_tensors should be in cuda prepared inputs")
 
         forward_batch = prepared_inputs["forward_batch"]
         pp_proxy_tensors = prepared_inputs["pp_proxy_tensors"]
@@ -370,10 +383,11 @@ class SGLExecutor(BaseExecutor):
         Inplace modifies hidden_states.
         Returns token_id, hidden_states
         """
-        assert hidden_states.dtype in (
+        if hidden_states.dtype not in (
             torch.int64,
             torch.int32,
-        ), "Single node must generate an output_id."
+        ):
+            raise RuntimeError("Single node must generate an output_id (int32/int64 hidden_states).")
         next_token_id = int(hidden_states[0])
         return next_token_id, hidden_states
 

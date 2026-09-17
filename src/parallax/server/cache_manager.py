@@ -63,7 +63,8 @@ class CacheManager:
         if layer_types is None:
             self.layer_types = ["attention"] * num_layers
         else:
-            assert len(layer_types) == num_layers, "layer_types length must match num_layers"
+            if len(layer_types) != num_layers:
+                raise ValueError("layer_types length must match num_layers")
             self.layer_types = layer_types
 
         # Check if we need blocks (any attention layer) and slots (any linear layer)

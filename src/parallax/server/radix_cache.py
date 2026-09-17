@@ -157,7 +157,8 @@ class RadixCache:
         """
         Get and concat kv cache from a tree node to the root.
         """
-        assert node != self.root_node, "should not fetch from the root node."
+        if node == self.root_node:
+            raise RuntimeError("should not fetch from the root node.")
         k_cache, v_cache = node.kv_cache.fetch()
         node = node.parent
         while node != self.root_node:

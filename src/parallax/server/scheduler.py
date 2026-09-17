@@ -106,7 +106,8 @@ class Scheduler:
 
     def _prompt_string_to_request(self, request_str: str) -> InitialRequest:
         """Convert the prompt string to InitialRequest."""
-        assert self.is_first_peer, "Only first peer can enqueue InitialRequest."
+        if not self.is_first_peer:
+            raise RuntimeError("Only first peer can enqueue InitialRequest.")
         input_ids = self.tokenizer.encode(request_str)
         return InitialRequest.from_prompt_ids(
             input_ids, self.eos_token_id, self.max_new_tokens, self.max_total_length
@@ -171,10 +172,10 @@ class Scheduler:
 
     def check_and_update_request_status(self, request: InitialRequest) -> bool:
         """Checks if a request has met any finishing conditions and updates its status."""
-        assert self.is_first_peer, "Only first peer can check and update request status."
-        assert (
-            self.eos_token_id is not None
-        ), "EOS token ID must be set for request status checking."
+        if not self.is_first_peer:
+            raise RuntimeError("Only first peer can check and update request status.")
+        if self.eos_token_id is None:
+            raise RuntimeError("EOS token ID must be set for request status checking.")
         if request.is_finished:
             return True
 

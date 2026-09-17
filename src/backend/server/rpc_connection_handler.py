@@ -1,4 +1,6 @@
 import json
+import queue
+import threading
 import time
 
 import httpx
@@ -9,6 +11,39 @@ from scheduling.node import Node, NodeHardwareInfo
 from scheduling.scheduler import Scheduler
 
 logger = get_logger(__name__)
+
+# Sentinel used to terminate the chunk queue in _iter_blocking_stream.
+_STREAM_DONE = object()
+_STREAM_ERROR = object()
+
+
+def _iter_blocking_stream(producer):
+    """Yield chunks produced by a blocking `producer(enqueue)` callable.
+
+    The blocking httpx work runs in a daemon worker thread so it does not block
+    the event loop; chunks are bridged back to the caller through a thread-safe
+    queue, preserving streaming yield order. `producer` must call
+    `enqueue(bytes)` per chunk. Exceptions inside producer are re-raised here.
+    """
+    q: "queue.Queue" = queue.Queue()
+
+    def _run():
+        try:
+            producer(q.put)
+        except Exception as exc:  # bridge the error to the consumer
+            q.put((_STREAM_ERROR, exc))
+        finally:
+            q.put((_STREAM_DONE, None))
+
+    t = threading.Thread(target=_run, daemon=True)
+    t.start()
+    while True:
+        kind, payload = q.get()
+        if kind is _STREAM_DONE:
+            break
+        if kind is _STREAM_ERROR:
+            raise payload
+        yield payload
 
 
 class RPCConnectionHandler(ConnectionHandler):
@@ -106,7 +141,8 @@ class RPCConnectionHandler(ConnectionHandler):
     ):
         """Handle chat completion request"""
         logger.debug(f"Chat completion request: {request}, type: {type(request)}")
-        try:
+
+        def _produce(enqueue):
             with httpx.Client(timeout=10 * 60, proxy=None, trust_env=False) as client:
                 if request.get("stream", False):
                     with client.stream(
@@ -116,26 +152,32 @@ class RPCConnectionHandler(ConnectionHandler):
                     ) as response:
                         for chunk in response.iter_bytes():
                             if chunk:
-                                yield chunk
+                                enqueue(chunk)
                 else:
                     response = client.post(
                         f"http://localhost:{self.http_port}/v1/chat/completions", json=request
                     ).json()
-                    yield json.dumps(response).encode()
+                    enqueue(json.dumps(response).encode())
+
+        try:
+            yield from _iter_blocking_stream(_produce)
         except Exception as e:
             logger.exception(f"Error in chat completion: {e}")
             yield b"internal server error"
 
     @rpc_stream_iter
     def cluster_status(self):
-        try:
+        def _produce(enqueue):
             with httpx.Client(timeout=10 * 60, proxy=None, trust_env=False) as client:
                 with client.stream(
                     "GET", f"http://localhost:{self.http_port}/cluster/status"
                 ) as response:
                     for chunk in response.iter_bytes():
                         if chunk:
-                            yield chunk
+                            enqueue(chunk)
+
+        try:
+            yield from _iter_blocking_stream(_produce)
         except Exception as e:
             logger.exception(f"Error in cluster status: {e}")
             yield json.dumps({"error": "internal server error"}).encode()

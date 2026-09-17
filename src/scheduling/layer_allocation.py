@@ -675,7 +675,7 @@ class GreedyLayerAllocator(BaseLayerAllocator):
 
         available_nodes = self.nodes.copy()
         for n in available_nodes:
-            logger.warning(f"Node {n.node_id} has capacity {n.get_decoder_layer_capacity()}")
+            logger.debug(f"Node {n.node_id} has capacity {n.get_decoder_layer_capacity()}")
         any_assigned = False
 
         # Read runtime knobs with sensible defaults if `init` wasn't called

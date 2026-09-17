@@ -287,7 +287,8 @@ class IntermediateRequest(Request):
     @property
     def input_length(self) -> int:
         """Length of the input sequence (hidden_states)."""
-        assert self.is_prefill
+        if not self.is_prefill:
+            raise RuntimeError("input_length is only defined for prefill requests")
         return self.current_position
 
     @property

@@ -24,10 +24,10 @@ def request_to_proto(
     IntermediateRequest contains request_id, current_position, status, and hidden_states.
     """
     forward_request = forward_pb2.ForwardRequest()
-    assert len(requests) > 0, "No requests to convert"
-    assert all(
-        request.status == requests[0].status for request in requests
-    ), "All requests must have the same status"
+    if len(requests) == 0:
+        raise ValueError("No requests to convert")
+    if not all(request.status == requests[0].status for request in requests):
+        raise ValueError("All requests must have the same status")
     if requests[0].status == RequestStatus.PREFILLING:
         forward_request.forward_mode = forward_pb2.ForwardMode.EXTEND
     elif requests[0].status == RequestStatus.DECODING:

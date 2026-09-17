@@ -96,6 +96,9 @@ class Scheduler:
         self._event_thread: Optional[threading.Thread] = None
         self._dispatch_thread: Optional[threading.Thread] = None
         self._alloc_log_thread: Optional[threading.Thread] = None
+        # Guards self.nodes, self.node_id_to_node, and self._node_assigned_request_count
+        # across the dispatch loop and join/leave processing threads.
+        self._state_lock: threading.RLock = threading.RLock()
         # Thread-safe bootstrap state
         self._bootstrapped: bool = False
         self._bootstrapped_event: threading.Event = threading.Event()
@@ -195,7 +198,8 @@ class Scheduler:
             override_warmup_count: If > 0, use this value instead of request_warm_up_for_reshard.
                 Default is 0, which means use request_warm_up_for_reshard.
         """
-        nodes_list = list(self.nodes)
+        with self._state_lock:
+            nodes_list = list(self.nodes)
         if not nodes_list:
             return
         num_layers = self.model_info.num_layers
@@ -283,12 +287,13 @@ class Scheduler:
 
     def checking_node_heartbeat(self) -> None:
         """Check the heartbeat of all nodes."""
-        for node in self.nodes:
-            if not node.is_active:
-                continue
-            if time.time() - node.last_heartbeat > self.heartbeat_timeout:
-                logger.debug(f"Node {node.node_id} heartbeat timeout")
-                self.leave(node.node_id)
+        with self._state_lock:
+            for node in list(self.nodes):
+                if not node.is_active:
+                    continue
+                if time.time() - node.last_heartbeat > self.heartbeat_timeout:
+                    logger.debug(f"Node {node.node_id} heartbeat timeout")
+                    self.leave(node.node_id)
 
     # Dynamic node management
     def join(self, node: Node, bootstrap: bool = False) -> None:
@@ -300,7 +305,8 @@ class Scheduler:
             node.param_mem_ratio,
             node.manual_layer_assignment,
         )
-        self.layer_allocator.declare(node)
+        with self._state_lock:
+            self.layer_allocator.declare(node)
 
         # Manual layer assignment bypasses bootstrap waiting
         if node.manual_layer_assignment:
@@ -337,43 +343,45 @@ class Scheduler:
 
     def leave(self, node_id: str) -> None:
         """Remove a node from allocation and refresh plan and materialized nodes."""
-        if node_id not in self.layer_allocator.node_id_to_node:
-            raise ValueError(f"Node {node_id} not found in nodes")
-        node = self.node_id_to_node[node_id]
-        logger.debug(
-            "Leaving node %s (start=%s, end=%s)", node_id, node.start_layer, node.end_layer
-        )
-        self.layer_allocator.leave(node_id)
-        if self.layer_allocator.should_global_rebalance():
-            logger.debug("Global rebalance triggered due to node leave")
-
-            # Count manual vs automatic nodes
-            manual_count = sum(1 for n in self.nodes if n.manual_layer_assignment)
-            total_count = len(self.nodes)
+        with self._state_lock:
+            if node_id not in self.node_id_to_node:
+                raise ValueError(f"Node {node_id} not found in nodes")
+            node = self.node_id_to_node[node_id]
             logger.debug(
-                f"Node count: {manual_count} manual, {total_count - manual_count} automatic"
+                "Leaving node %s (start=%s, end=%s)", node_id, node.start_layer, node.end_layer
             )
-            if manual_count == total_count:
-                logger.debug("All nodes are manual assignment, skipping global rebalance")
-            elif manual_count > 0:
-                logger.error(
-                    f"Mixed assignment detected ({manual_count} manual, {total_count - manual_count} automatic); skipping rebalance"
+            self.layer_allocator.leave(node_id)
+            self._node_assigned_request_count.pop(node_id, None)
+            if self.layer_allocator.should_global_rebalance():
+                logger.debug("Global rebalance triggered due to node leave")
+
+                # Count manual vs automatic nodes
+                manual_count = sum(1 for n in self.nodes if n.manual_layer_assignment)
+                total_count = len(self.nodes)
+                logger.debug(
+                    f"Node count: {manual_count} manual, {total_count - manual_count} automatic"
                 )
-            else:
-                # All nodes are automatic, try adjustment first, then rebalance if needed
-                if not self.layer_allocator.has_full_pipeline():
-                    logger.debug(
-                        "No full pipeline after node leave, attempting warmup and truncate"
+                if manual_count == total_count:
+                    logger.debug("All nodes are manual assignment, skipping global rebalance")
+                elif manual_count > 0:
+                    logger.error(
+                        f"Mixed assignment detected ({manual_count} manual, {total_count - manual_count} automatic); skipping rebalance"
                     )
-                    self._run_warmup_and_truncate(override_warmup_count=1)
-                    if not self.layer_allocator.has_full_pipeline():
-                        self.bootstrap(clear_existing=True, skip_warmup=True)
-                    else:
-                        logger.debug(
-                            "Pipeline recovered through warmup and truncate, skipping global rebalance"
-                        )
                 else:
-                    self.bootstrap(clear_existing=True, skip_warmup=True)
+                    # All nodes are automatic, try adjustment first, then rebalance if needed
+                    if not self.layer_allocator.has_full_pipeline():
+                        logger.debug(
+                            "No full pipeline after node leave, attempting warmup and truncate"
+                        )
+                        self._run_warmup_and_truncate(override_warmup_count=1)
+                        if not self.layer_allocator.has_full_pipeline():
+                            self.bootstrap(clear_existing=True, skip_warmup=True)
+                        else:
+                            logger.debug(
+                                "Pipeline recovered through warmup and truncate, skipping global rebalance"
+                            )
+                    else:
+                        self.bootstrap(clear_existing=True, skip_warmup=True)
 
         with self._node_count_cv:
             self._node_count_cv.notify_all()
@@ -400,16 +408,17 @@ class Scheduler:
             req = None
         if req is None:
             return None
-        path, latency = self.request_router.find_optimal_path(self.nodes, self.num_layers)
-        req.routing_table = path
-        # Update simple load counters
-        for node_id in path:
-            n = self.node_id_to_node[node_id]
-            if n is not None:
-                self._node_assigned_request_count[node_id] = (
-                    self._node_assigned_request_count.get(node_id, 0) + 1
-                )
-                n.add_request()
+        with self._state_lock:
+            path, latency = self.request_router.find_optimal_path(self.nodes, self.num_layers)
+            req.routing_table = path
+            # Update simple load counters
+            for node_id in path:
+                n = self.node_id_to_node[node_id]
+                if n is not None:
+                    self._node_assigned_request_count[node_id] = (
+                        self._node_assigned_request_count.get(node_id, 0) + 1
+                    )
+                    n.add_request()
         logger.debug(
             "Dispatched request %s via path %s (est_lat=%.2fms)", req.request_id, path, latency
         )
@@ -454,15 +463,16 @@ class Scheduler:
                     sep = "-" * len(header)
                     logger.debug("%s\n%s", header, sep)
                     for node_id, start_layer, end_layer in assignments:
-                        node = self.node_id_to_node[node_id]
-                        # Snapshot values to avoid recomputing/logging side-effects twice
-                        capacity = node.max_requests
-                        current = node.current_requests
-                        latency = node.layer_latency_ms
-                        latency_str = "inf" if latency == float("inf") else f"{latency:.2f}"
-                        n_hosted_requests = 0
-                        if node_id in self._node_assigned_request_count:
-                            n_hosted_requests = self._node_assigned_request_count[node_id]
+                        with self._state_lock:
+                            node = self.node_id_to_node[node_id]
+                            # Snapshot values to avoid recomputing/logging side-effects twice
+                            capacity = node.max_requests
+                            current = node.current_requests
+                            latency = node.layer_latency_ms
+                            latency_str = "inf" if latency == float("inf") else f"{latency:.2f}"
+                            n_hosted_requests = 0
+                            if node_id in self._node_assigned_request_count:
+                                n_hosted_requests = self._node_assigned_request_count[node_id]
                         logger.debug(
                             "  %-16s layers [%3d, %3d) | load %3d/%-3d | latency %7s ms | assigned request count %3d",
                             node_id,
@@ -516,16 +526,17 @@ class Scheduler:
                 req = self._request_queue.get(timeout=poll_interval)
                 if req is None:
                     continue
-                path, path_rtt = self.request_router.find_optimal_path(self.nodes, self.num_layers)
-                logger.debug(f"Path RTT: {path_rtt}")
-                req.routing_table = path
-                for node_id in path:
-                    n = self.node_id_to_node[node_id]
-                    if n is not None:
-                        self._node_assigned_request_count[node_id] = (
-                            self._node_assigned_request_count.get(node_id, 0) + 1
-                        )
-                        n.add_request()
+                with self._state_lock:
+                    path, path_rtt = self.request_router.find_optimal_path(self.nodes, self.num_layers)
+                    logger.debug(f"Path RTT: {path_rtt}")
+                    req.routing_table = path
+                    for node_id in path:
+                        n = self.node_id_to_node[node_id]
+                        if n is not None:
+                            self._node_assigned_request_count[node_id] = (
+                                self._node_assigned_request_count.get(node_id, 0) + 1
+                            )
+                            n.add_request()
                 logger.debug(
                     "Dispatched request %s via path %s", getattr(req, "request_id", "?"), path
                 )
@@ -626,4 +637,5 @@ class Scheduler:
             self._node_count_cv.notify_all()
 
     def need_more_nodes(self):
-        return not self._bootstrapped and len(self.nodes) >= self.min_nodes_bootstrapping
+        with self._state_lock:
+            return not self._bootstrapped and len(self.nodes) >= self.min_nodes_bootstrapping

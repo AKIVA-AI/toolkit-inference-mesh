@@ -236,7 +236,10 @@ class MLXExecutor(BaseExecutor):
                         )
                         continue
 
-                    assert req.next_token_id is not None
+                    if req.next_token_id is None:
+                        raise RuntimeError(
+                            f"IntermediateRequest {req.request_id} arrived without next_token_id"
+                        )
                     original_req.commit_new_token(req.next_token_id)
                     if len(req.routing_table) > 0:
                         original_req.routing_table = req.routing_table
@@ -272,9 +275,10 @@ class MLXExecutor(BaseExecutor):
         else:
             # Intermediate and Last peers receive IntermediateRequests from the previous peer.
             for req in requests:
-                assert isinstance(
-                    req, IntermediateRequest
-                ), "Non-first peers must receive IntermediateRequests."
+                if not isinstance(req, IntermediateRequest):
+                    raise TypeError(
+                        f"Non-first peers must receive IntermediateRequests, got {type(req)}."
+                    )
                 if req.is_finished or req.hidden_states is None:
                     if self.enable_prefix_cache:
                         keys, values = self.cache_manager.gather_kv_cache(req.request_id)
@@ -359,7 +363,8 @@ class MLXExecutor(BaseExecutor):
         Inplace modifies hidden_states.
         Returns token_id, hidden_states
         """
-        assert hidden_states.dtype == mx.uint32, "Single node must generate an output_id."
+        if hidden_states.dtype != mx.uint32:
+            raise RuntimeError("Single node must generate an output_id (uint32 hidden_states).")
         next_token_id = int(hidden_states[0])
         hidden_states = hidden_states.astype(mx.int32)
         return next_token_id, hidden_states
@@ -377,7 +382,8 @@ class MLXExecutor(BaseExecutor):
         # TODO: Adapt Prefix Cache to PagedKV
 
         for req in batched_requests:
-            assert req.is_prefill, f"Request {req.request_id} is not a prefill request."
+            if not req.is_prefill:
+                raise RuntimeError(f"Request {req.request_id} is not a prefill request.")
             if self.is_first_peer:
                 h_or_tokens_list.append(req.input_ids)
             else:
