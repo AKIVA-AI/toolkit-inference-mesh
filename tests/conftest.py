@@ -17,6 +17,7 @@ _NO_HW_DEPS = {
     "test_routing_edge_cases.py",
     "test_ascii_utils.py",
     "test_health_endpoints.py",
+    "test_pipeline_integration.py",
 }
 
 

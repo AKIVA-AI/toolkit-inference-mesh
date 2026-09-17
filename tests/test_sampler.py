@@ -46,7 +46,10 @@ class TestSampler(unittest.TestCase):
         logits = logits / temperatures.reshape(-1, 1)
         next_token_ids_ref = mx.random.categorical(logits)
 
-        mx.allclose(batch_next_token_ids, next_token_ids_ref)
+        assert mx.allclose(batch_next_token_ids, next_token_ids_ref), (
+            f"Sampled token ids {batch_next_token_ids} do not match reference "
+            f"{next_token_ids_ref}"
+        )
 
 
 if __name__ == "__main__":
